@@ -354,6 +354,15 @@ csc /target:winexe /platform:anycpu /optimize+ /codepage:65001 ^
 Python is only needed for the icon pipeline and the tweak-data generator; the application itself
 has no Python dependency.
 
+Portable release package (EXE + README + LICENSE + NOTICE, zipped):
+
+```
+powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.0-beta
+```
+
+It writes `MineManager-v0.9.0-beta-portable.zip` and prints the SHA-256 plus the ready-to-run
+`gh release create` command. Attach that zip to every GitHub release.
+
 ## Data pipeline
 
 ```
@@ -403,7 +412,7 @@ tests/          Smoke.cs (off-screen UI check, not shipped)
 docs/           KAYNAK-DEGERLENDIRME.md (BCU + WinUtil evaluation, safety review, checklist)
 design-system/  Aero tokens (tokens.json → aero-tokens.css, light + dark), MASTER.md, screens/
 dist/           compiled single file (not committed; released as a portable zip)
-.github/        release workflow (tag → build → portable zip)
+packaging/      make-portable.ps1 (build + zip) and the readme inside the zip
 CHANGELOG.md    version history
 ROADMAP.md      what is planned next
 LICENSE/NOTICE  MIT licence and third-party attribution
@@ -826,6 +835,15 @@ csc /target:winexe /platform:anycpu /optimize+ /codepage:65001 ^
 
 Python yalnızca simge üretimi ve tweak verisi üreticisi için gerekir; uygulamanın Python bağımlılığı yoktur.
 
+Portable sürüm paketi (EXE + README + LICENSE + NOTICE, zip):
+
+```
+powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.0-beta
+```
+
+`MineManager-v0.9.0-beta-portable.zip` dosyasını üretir; SHA-256 özetini ve doğrudan çalıştırılacak
+`gh release create` komutunu yazar. Her GitHub sürümüne bu zip eklenir.
+
 <a id="tr-veri"></a>
 
 ## Veri üretimi
@@ -880,7 +898,7 @@ tests/          Smoke.cs (ekran dışı UI kontrolü; dağıtılan EXE'ye dahil 
 docs/           KAYNAK-DEGERLENDIRME.md (BCU + WinUtil değerlendirmesi, güvenlik incelemesi, liste)
 design-system/  Aero tokenları (tokens.json → aero-tokens.css, açık + koyu), MASTER.md, screens/
 dist/           derlenmiş tek dosya (depoda tutulmaz; portable zip olarak yayınlanır)
-.github/        release iş akışı (etiket → derleme → portable zip)
+packaging/      make-portable.ps1 (derleme + zip) ve zip içindeki beni-oku
 CHANGELOG.md    sürüm geçmişi
 ROADMAP.md      sıradaki planlar
 LICENSE/NOTICE  MIT lisansı ve üçüncü taraf atıfları

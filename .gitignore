@@ -22,3 +22,7 @@ shots/
 *.suo
 Thumbs.db
 desktop.ini
+
+# Release packaging output
+MineManager-*-portable.zip
+MineManager-*-portable/
