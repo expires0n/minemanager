@@ -380,7 +380,7 @@ remote) is curated by hand because most WinUtil entries there are shell commands
 
 ## Verification
 
-- `build.bat` → **0 errors, 0 warnings**; `dist\MineManager.exe` = 628,224 bytes (< 1 MB).
+- `build.bat` → **0 errors, 0 warnings**; `dist\MineManager.exe` is ~628 KB (under 1 MB).
 - `tests/Smoke.cs` renders the real `MainForm` off-screen in **112 combinations** — 7 pages ×
   4 widths (1100/940/620/320) × English/Turkish × light/dark — and writes PNGs, so layout,
   clipping, theme and translation regressions are visible without clicking through the app.
