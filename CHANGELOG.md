@@ -2,12 +2,13 @@
 
 All notable changes are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
-[Semantic Versioning](https://semver.org/) with a `-beta` pre-release suffix until 1.0.
+[Semantic Versioning](https://semver.org/). Until 1.0 every release is a beta, and a tag with a
+pre-release suffix (`-beta`, `-rc`) is published as a GitHub pre-release.
 
 > **MineManager is in public beta.** Every release is usable, but pages, catalogues and
 > translations are still growing. See [ROADMAP.md](ROADMAP.md) for what comes next.
 
-## [0.9.0-beta] — 2026-11-22
+## [0.9.0] — 2026-11-22
 
 First public beta. Single portable EXE, no installer, no runtime downloads.
 
@@ -42,4 +43,4 @@ First public beta. Single portable EXE, no installer, no runtime downloads.
 - Browser caches can only be removed while the browsers are closed.
 - Windows 7 runs the Aero theme, but only registry-based features are meaningful there.
 
-[0.9.0-beta]: https://github.com/expires0n/minemanager/releases/tag/v0.9.0-beta
+[0.9.0]: https://github.com/expires0n/minemanager/releases/tag/v0.9.0

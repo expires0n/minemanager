@@ -62,10 +62,13 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create $env:VERSION `
-            "$env:ZIP_NAME" `
-            "SHA256SUMS.txt" `
-            --title "MineManager $env:VERSION" `
-            --notes-file packaging\RELEASE-NOTES.md `
-            --prerelease `
-            --verify-tag
+          $ghArgs = @(
+            'release', 'create', $env:VERSION,
+            $env:ZIP_NAME, 'SHA256SUMS.txt',
+            '--title', "MineManager $($env:VERSION)",
+            '--notes-file', 'packaging\RELEASE-NOTES.md',
+            '--verify-tag'
+          )
+          # Tags with a pre-release suffix such as v1.1.0-beta stay a GitHub pre-release.
+          if ($env:VERSION -match '-') { $ghArgs += '--prerelease' }
+          gh @ghArgs

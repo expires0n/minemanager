@@ -26,7 +26,7 @@ and hardware information.
 > - **Scope expands every release** — startup/service managers, cleanup profiles, disk analyzer,
 >   driver inventory and more are on the [roadmap](ROADMAP.md).
 > - **Data grows every release** — cleanup categories, tweaks and config actions are catalogue-driven
->   and the counts in this README are a snapshot of `v0.9.0-beta`.
+>   and the counts in this README are a snapshot of `v0.9.0`.
 > - **More languages are coming** — English and Turkish ship today.
 > - **Expect rough edges.** Please open an [issue](https://github.com/expires0n/minemanager/issues)
 >   with your Windows build, the page and what you expected.
@@ -108,7 +108,7 @@ is not feature-complete and it is not frozen.
 
 | | |
 |---|---|
-| Current stage | Public beta (`v0.9.0-beta`), versioned with a `-beta` suffix until 1.0 |
+| Current stage | Public beta (`v0.9.0`); the project stays beta until 1.0 |
 | Scope | Every release adds tools and pages; see the [roadmap](ROADMAP.md) |
 | Catalogues | Cleanup categories, tweaks and config actions keep growing; counts here are a snapshot |
 | Languages | English + Turkish now; German, Spanish and Dutch are planned |
@@ -357,10 +357,10 @@ has no Python dependency.
 Portable release package (EXE + README + LICENSE + NOTICE, zipped):
 
 ```
-powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.0-beta
+powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.0
 ```
 
-It writes `MineManager-v0.9.0-beta-portable.zip` and prints the SHA-256 plus the ready-to-run
+It writes `MineManager-v0.9.0-portable.zip` and prints the SHA-256 plus the ready-to-run
 `gh release create` command. Attach that zip to every GitHub release.
 
 ## Data pipeline
@@ -484,7 +484,7 @@ section above.
 > - **Kapsam her sürümde büyüyor** — başlangıç/hizmet yöneticileri, temizlik profilleri, disk
 >   analizi, sürücü envanteri ve daha fazlası [yol haritasında](ROADMAP.md).
 > - **Veri her sürümde büyüyor** — temizlik kategorileri, tweak'ler ve yapılandırma öğeleri katalog
->   tabanlıdır; bu README'deki sayılar `v0.9.0-beta` anlık görüntüsüdür.
+>   tabanlıdır; bu README'deki sayılar `v0.9.0` anlık görüntüsüdür.
 > - **Yeni diller geliyor** — bugün İngilizce ve Türkçe var.
 > - **Pürüzler olabilir.** Windows sürümünüzü, sayfayı ve beklediğiniz davranışı yazarak
 >   [issue](https://github.com/expires0n/minemanager/issues) açın.
@@ -561,7 +561,7 @@ kayıt defteri tabanlı özellikler anlamlıdır).
 
 | | |
 |---|---|
-| Aşama | Herkese açık beta (`v0.9.0-beta`), 1.0'a kadar `-beta` sonekiyle sürümlenir |
+| Aşama | Herkese açık beta (`v0.9.0`); proje 1.0'a kadar beta kalır |
 | Kapsam | Her sürüm yeni araç ve sayfa ekler; [yol haritasına](ROADMAP.md) bakın |
 | Kataloglar | Temizlik kategorileri, tweak'ler ve yapılandırma öğeleri büyümeye devam eder; buradaki sayılar anlık görüntüdür |
 | Diller | Şimdilik İngilizce + Türkçe; Almanca, İspanyolca ve Hollandaca planlanıyor |
@@ -837,10 +837,10 @@ Python yalnızca simge üretimi ve tweak verisi üreticisi için gerekir; uygula
 Portable sürüm paketi (EXE + README + LICENSE + NOTICE, zip):
 
 ```
-powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.0-beta
+powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.0
 ```
 
-`MineManager-v0.9.0-beta-portable.zip` dosyasını üretir; SHA-256 özetini ve doğrudan çalıştırılacak
+`MineManager-v0.9.0-portable.zip` dosyasını üretir; SHA-256 özetini ve doğrudan çalıştırılacak
 `gh release create` komutunu yazar. Her GitHub sürümüne bu zip eklenir.
 
 <a id="tr-veri"></a>
