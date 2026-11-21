@@ -551,8 +551,6 @@ kayıt defteri tabanlı özellikler anlamlıdır).
 | Kaldırıcı | kayıt defteri birleşimi (HKLM 64-bit, `WOW6432Node`, HKCU), 6 kurulum ailesi tespiti |
 | Eşzamanlılık | aynı anda tek uzun işlem; iş sürerken dil/tema değişimi kilitli |
 
-<a id="tr-hizli"></a>
-
 <a id="tr-durum"></a>
 
 ## Proje durumu
