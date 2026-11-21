@@ -1,0 +1,24 @@
+# Build output
+dist/
+bin/
+obj/
+*.exe
+*.pdb
+*.dll
+
+# Local state written next to the EXE when running from the repo
+MineManager.ini
+MineManager.undo.tsv
+MineManager-backup/
+shots/
+
+# Locally cloned reference sources
+.ref/
+
+# IDE / OS
+.vs/
+.vscode/
+*.user
+*.suo
+Thumbs.db
+desktop.ini

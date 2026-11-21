@@ -1,0 +1,24 @@
+MineManager
+Copyright (c) 2026 MineManager contributors
+Licensed under the MIT License (see LICENSE).
+
+MineManager adapts ideas, rules and catalogue data from the projects below.
+Neither project is bundled with MineManager and no file is a verbatim copy.
+
+1) Bulk Crap Uninstaller (BCU)
+   https://github.com/BCUninstaller/Bulk-Crap-Uninstaller
+   Copyright (c) Marcin Szeniak and contributors
+   Licensed under the Apache License, Version 2.0
+   Adapted: installer-type detection, quiet-uninstall command rules,
+   Sift4 name-similarity logic, registry union reading.
+
+2) Windows Utility (WinUtil)
+   https://github.com/ChrisTitusTech/winutil
+   Copyright (c) Chris Titus Tech
+   Licensed under the MIT License
+   Adapted: tweak and feature catalogue data derived from
+   config/tweaks.json and config/feature.json. Generated sources keep the
+   source and licence header.
+
+Full evaluation of what was ported, changed or rejected:
+docs/KAYNAK-DEGERLENDIRME.md

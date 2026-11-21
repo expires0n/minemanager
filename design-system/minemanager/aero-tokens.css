@@ -1,0 +1,305 @@
+/* Design Tokens - Auto-generated */
+/* Do not edit directly - modify tokens.json instead.
+   Dark-theme map + reduced/forced-colors media blocks are appended at the end. */
+
+/* === PRIMITIVES === */
+:root {
+  --primitive-color-blue-100: #EAF5FF;
+  --primitive-color-blue-200: #D5EAFD;
+  --primitive-color-blue-300: #B7D9F4;
+  --primitive-color-blue-400: #8EC3EA;
+  --primitive-color-blue-500: #5AA3DC;
+  --primitive-color-blue-600: #2F7BBD;
+  --primitive-color-blue-700: #1D5B91;
+  --primitive-color-blue-800: #123C5E;
+  --primitive-color-blue-900: #0B2B45;
+  --primitive-color-ink: #16283A;
+  --primitive-color-ink-soft: #3D556B;
+  --primitive-color-disabled: #93A3B1;
+  --primitive-color-success: #6CBB3C;
+  --primitive-color-warning: #E8A33D;
+  --primitive-color-danger: #C0392B;
+  --primitive-color-white: #FFFFFF;
+  --primitive-color-black: #000000;
+  --primitive-color-surface-paper: #FFFFFF;
+  --primitive-color-surface-chrome: #F1F5F9;
+  --primitive-color-surface-panel-line: #C9D4DE;
+  --primitive-color-surface-toolbar-top: #F6F9FC;
+  --primitive-color-surface-toolbar-bottom: #E6EDF4;
+  --primitive-color-surface-toolbar-line: #CBD6E0;
+  --primitive-color-surface-header-top: #FBFDFF;
+  --primitive-color-surface-header-bottom: #EAF0F6;
+  --primitive-color-surface-row-hover-top: #F4FBFF;
+  --primitive-color-surface-row-hover-bottom: #E7F4FE;
+  --primitive-color-surface-status-top: #EEF3F8;
+  --primitive-color-surface-status-bottom: #E2E9F1;
+  --primitive-color-surface-selection-edge: #86BFE7;
+  --primitive-color-surface-focus-edge: #4A9BDC;
+  --primitive-color-glass-tint-top: rgba(233,245,255,0.90);
+  --primitive-color-glass-tint-mid: rgba(180,214,244,0.74);
+  --primitive-color-glass-tint-bottom: rgba(196,226,250,0.80);
+  --primitive-color-glass-rim: rgba(24,56,88,0.32);
+  --primitive-color-glass-edge: rgba(255,255,255,0.55);
+  --primitive-color-glass-glow: rgba(122,190,250,0.38);
+  --primitive-color-glass-fallback-top: #E9F5FF;
+  --primitive-color-glass-fallback-mid: #B4D6F4;
+  --primitive-color-glass-fallback-bottom: #C4E2FA;
+  --primitive-font-family: "Segoe UI", Tahoma, sans-serif;
+  --primitive-font-family-semibold: "Segoe UI Semibold", "Segoe UI", sans-serif;
+  --primitive-font-family-mono: Consolas, "Courier New", monospace;
+  --primitive-font-size-heading: 15px;
+  --primitive-font-size-body: 12px;
+  --primitive-font-size-secondary: 11px;
+  --primitive-font-line-body: 16px;
+  --primitive-font-weight-regular: 400;
+  --primitive-font-weight-semibold: 600;
+  --primitive-size-titlebar: 30px;
+  --primitive-size-caption-width: 26px;
+  --primitive-size-caption-height: 17px;
+  --primitive-size-button: 23px;
+  --primitive-size-field: 22px;
+  --primitive-size-row: 24px;
+  --primitive-size-status: 22px;
+  --primitive-size-taskbar: 40px;
+  --primitive-size-nav: 190px;
+  --primitive-size-nav-compact: 46px;
+  --primitive-size-glass-padding: 4px;
+  --primitive-size-checkbox: 13px;
+  --primitive-radius-window: 8px;
+  --primitive-radius-control: 3px;
+  --primitive-radius-field: 2px;
+  --primitive-radius-row: 0px;
+  --primitive-radius-toast: 6px;
+  --primitive-gradient-button-face: linear-gradient(180deg, #FDFEFE 0%, #F2F6F9 44%, #E4EAEF 50%, #EEF3F7 100%);
+  --primitive-gradient-button-hover: linear-gradient(180deg, #F7FCFF 0%, #E2F2FF 44%, #CFE8FD 50%, #E4F3FF 100%);
+  --primitive-gradient-button-pressed: linear-gradient(180deg, #E3EBF2 0%, #D2E4F2 44%, #C2DDF4 50%, #D6EAFA 100%);
+  --primitive-gradient-progress: linear-gradient(180deg, #B3E878 0%, #8CCF3F 45%, #6CB21F 52%, #9ADA4C 100%);
+  --primitive-gradient-selection: linear-gradient(180deg, #D9EDFF 0%, #BFE0F9 52%, #CFE8FC 100%);
+  --primitive-gradient-toolbar: linear-gradient(180deg, #F6F9FC 0%, #E6EDF4 100%);
+  --primitive-gradient-header: linear-gradient(180deg, #FBFDFF 0%, #EAF0F6 100%);
+  --primitive-gradient-status: linear-gradient(180deg, #EEF3F8 0%, #E2E9F1 100%);
+  --primitive-gradient-glass-tint: linear-gradient(180deg, rgba(233,245,255,0.90) 0%, rgba(180,214,244,0.74) 56%, rgba(196,226,250,0.80) 100%);
+  --primitive-gradient-glass-sheen: linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.12) 46%, rgba(255,255,255,0.04) 54%, rgba(255,255,255,0.34) 100%);
+  --primitive-blur-glass: blur(22px) saturate(1.6);
+  --primitive-shadow-window: 0 2px 3px rgba(0,0,0,0.16), 0 16px 40px rgba(6,22,40,0.42);
+  --primitive-shadow-control: inset 0 1px 0 #FFFFFF, 0 1px 1px rgba(0,0,0,0.08);
+  --primitive-shadow-field-inner: inset 0 1px 2px rgba(0,0,0,0.14);
+  --primitive-duration-fast: 120ms;
+  --primitive-duration-base: 150ms;
+  --primitive-duration-slow: 180ms;
+}
+
+/* === SEMANTIC === */
+:root {
+  --color-background: #F1F5F9;
+  --color-surface: #FFFFFF;
+  --color-foreground: #16283A;
+  --color-muted-foreground: #3D556B;
+  --color-disabled: #93A3B1;
+  --color-primary: #2F7BBD;
+  --color-primary-hover: #1D5B91;
+  --color-border: #C9D4DE;
+  --color-ring: rgba(88,168,238,0.90);
+  --color-success: #6CBB3C;
+  --color-warning: #E8A33D;
+  --color-danger: #C0392B;
+  --color-selection-edge: #86BFE7;
+  --color-focus-edge: #4A9BDC;
+  --color-success-text: #4A803B;
+  --color-warning-text: #8A6C3C;
+  --glass-tint: linear-gradient(180deg, rgba(233,245,255,0.90) 0%, rgba(180,214,244,0.74) 56%, rgba(196,226,250,0.80) 100%);
+  --glass-sheen: linear-gradient(180deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.12) 46%, rgba(255,255,255,0.04) 54%, rgba(255,255,255,0.34) 100%);
+  --glass-rim: rgba(24,56,88,0.32);
+  --glass-edge: rgba(255,255,255,0.55);
+  --glass-glow: rgba(122,190,250,0.38);
+  --glass-opaque-fallback: #B4D6F4;
+  --motion-duration: 150ms;
+  --motion-easing: ease-out;
+  --dark-color-background: #18212C;
+  --dark-color-surface: #202B38;
+  --dark-color-foreground: #E8F1F9;
+  --dark-color-muted-foreground: #A9BDD0;
+  --dark-color-disabled: #6F8296;
+  --dark-color-primary: #2F7BBD;
+  --dark-color-primary-hover: #5AA3DC;
+  --dark-color-border: #3A4A5B;
+  --dark-color-ring: rgba(142,195,234,0.90);
+  --dark-color-success: #6CBB3C;
+  --dark-color-warning: #E8A33D;
+  --dark-color-danger: #C0392B;
+  --dark-color-selection-edge: #5AA3DC;
+  --dark-color-focus-edge: #8EC3EA;
+  --dark-color-success-text: #A7D88E;
+  --dark-color-warning-text: #F1CB8F;
+  --dark-color-danger-text: #D9857C;
+  --dark-glass-tint: linear-gradient(180deg, rgba(20,32,45,0.92) 0%, rgba(28,42,58,0.80) 56%, rgba(22,34,48,0.86) 100%);
+  --dark-glass-sheen: linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.04) 46%, rgba(255,255,255,0.02) 54%, rgba(255,255,255,0.10) 100%);
+  --dark-glass-rim: rgba(0,0,0,0.59);
+  --dark-glass-edge: rgba(255,255,255,0.24);
+  --dark-glass-glow: rgba(90,163,220,0.35);
+  --dark-glass-opaque-fallback: #1A2430;
+  --dark-component-button-face: linear-gradient(180deg, #3C4C5D 0%, #334253 44%, #2A3848 50%, #2F3E4E 100%);
+  --dark-component-button-face-hover: linear-gradient(180deg, #355A78 0%, #2E5D84 44%, #255A85 50%, #2C587B 100%);
+  --dark-component-button-face-pressed: linear-gradient(180deg, #24384A 0%, #1F3B50 44%, #1B3548 50%, #203E54 100%);
+  --dark-component-input-background: #17212C;
+  --dark-component-table-header: linear-gradient(180deg, #2A3948 0%, #22303D 100%);
+  --dark-component-table-hover: linear-gradient(180deg, #2A3D50 0%, #24364A 100%);
+  --dark-component-table-selection: linear-gradient(180deg, #1D4A70 0%, #1A5F93 52%, #1B5484 100%);
+  --dark-component-dialog-surface: #202B38;
+}
+
+/* === COMPONENTS === */
+:root {
+  --button-face: linear-gradient(180deg, #FDFEFE 0%, #F2F6F9 44%, #E4EAEF 50%, #EEF3F7 100%);
+  --button-face-hover: linear-gradient(180deg, #F7FCFF 0%, #E2F2FF 44%, #CFE8FD 50%, #E4F3FF 100%);
+  --button-face-pressed: linear-gradient(180deg, #E3EBF2 0%, #D2E4F2 44%, #C2DDF4 50%, #D6EAFA 100%);
+  --button-border: #C9D4DE;
+  --button-border-default: #2F7BBD;
+  --button-text: #16283A;
+  --button-text-disabled: #93A3B1;
+  --button-height: 23px;
+  --button-radius: 3px;
+  --button-font-size: 12px;
+  --button-shadow: inset 0 1px 0 #FFFFFF, 0 1px 1px rgba(0,0,0,0.08);
+  --input-height: 22px;
+  --input-background: #FFFFFF;
+  --input-border: #C9D4DE;
+  --input-focus-border: #4A9BDC;
+  --input-focus-ring: rgba(120,190,250,0.40);
+  --input-radius: 2px;
+  --input-shadow: inset 0 1px 2px rgba(0,0,0,0.14);
+  --checkbox-size: 13px;
+  --checkbox-radius: 3px;
+  --checkbox-surface: #FFFFFF;
+  --checkbox-border: #C9D4DE;
+  --checkbox-checked: #2F7BBD;
+  --table-header-height: 22px;
+  --table-row-height: 24px;
+  --table-header: linear-gradient(180deg, #FBFDFF 0%, #EAF0F6 100%);
+  --table-hover: linear-gradient(180deg, #F4FBFF 0%, #E7F4FE 100%);
+  --table-selection: linear-gradient(180deg, #D9EDFF 0%, #BFE0F9 52%, #CFE8FC 100%);
+  --table-line: #DCE4EC;
+  --dialog-surface: #F1F5F9;
+  --dialog-radius: 8px;
+  --dialog-titlebar: 30px;
+  --dialog-button-gap: 8px;
+  --toast-radius: 6px;
+  --toast-offset: 6px;
+  --toast-duration: 4000ms;
+  --progress-height: 14px;
+  --progress-fill: linear-gradient(180deg, #B3E878 0%, #8CCF3F 45%, #6CB21F 52%, #9ADA4C 100%);
+  --nav-width: 190px;
+  --nav-compact-width: 46px;
+  --nav-row-height: 24px;
+  --nav-background: #F1F5F9;
+  --nav-selected: linear-gradient(180deg, #D9EDFF 0%, #BFE0F9 52%, #CFE8FC 100%);
+  --nav-divider: rgba(28,60,92,0.34);
+  --card-background: #FFFFFF;
+  --card-border: #C9D4DE;
+  --card-radius: 3px;
+  --card-padding: 10px;
+  --window-radius: 8px;
+  --window-titlebar: 30px;
+  --window-caption-width: 26px;
+  --window-caption-height: 17px;
+  --window-glass-padding: 4px;
+  --window-shadow: 0 2px 3px rgba(0,0,0,0.16), 0 16px 40px rgba(6,22,40,0.42);
+}
+
+/* === DARK THEME (handoff) === */
+/* Mirrors semantic.dark.* and src/AeroDark.cs. The WinForms app paints these
+   values directly; CSS is the design handoff / QA reference. */
+[data-theme="dark"] {
+  --color-background: var(--dark-color-background);
+  --color-surface: var(--dark-color-surface);
+  --color-foreground: var(--dark-color-foreground);
+  --color-muted-foreground: var(--dark-color-muted-foreground);
+  --color-disabled: var(--dark-color-disabled);
+  --color-primary: var(--dark-color-primary);
+  --color-primary-hover: var(--dark-color-primary-hover);
+  --color-border: var(--dark-color-border);
+  --color-ring: var(--dark-color-ring);
+  --color-success: var(--dark-color-success);
+  --color-warning: var(--dark-color-warning);
+  --color-danger: var(--dark-color-danger);
+  --color-selection-edge: var(--dark-color-selection-edge);
+  --color-focus-edge: var(--dark-color-focus-edge);
+  --color-success-text: var(--dark-color-success-text);
+  --color-warning-text: var(--dark-color-warning-text);
+  --glass-tint: var(--dark-glass-tint);
+  --glass-sheen: var(--dark-glass-sheen);
+  --glass-rim: var(--dark-glass-rim);
+  --glass-edge: var(--dark-glass-edge);
+  --glass-glow: var(--dark-glass-glow);
+  --glass-opaque-fallback: var(--dark-glass-opaque-fallback);
+  --button-face: var(--dark-component-button-face);
+  --button-face-hover: var(--dark-component-button-face-hover);
+  --button-face-pressed: var(--dark-component-button-face-pressed);
+  --button-text: var(--dark-color-foreground);
+  --button-text-disabled: var(--dark-color-disabled);
+  --button-border: var(--dark-color-border);
+  --input-background: var(--dark-component-input-background);
+  --input-border: var(--dark-color-border);
+  --checkbox-surface: var(--dark-component-input-background);
+  --checkbox-border: var(--dark-color-border);
+  --table-header: var(--dark-component-table-header);
+  --table-hover: var(--dark-component-table-hover);
+  --table-selection: var(--dark-component-table-selection);
+  --table-line: var(--dark-color-border);
+  --dialog-surface: var(--dark-component-dialog-surface);
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-tint: linear-gradient(180deg, #E9F5FF 0%, #B4D6F4 56%, #C4E2FA 100%);
+    --glass-sheen: none;
+    --glass-rim: #C9D4DE;
+    --glass-edge: #FFFFFF;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --color-background: Canvas;
+    --color-surface: Canvas;
+    --color-foreground: CanvasText;
+    --color-muted-foreground: GrayText;
+    --color-border: CanvasText;
+    --color-disabled: GrayText;
+    --color-primary: Highlight;
+    --color-ring: Highlight;
+    --glass-tint: Canvas;
+    --glass-sheen: none;
+    --glass-rim: CanvasText;
+    --glass-edge: CanvasText;
+    --button-face: ButtonFace;
+    --button-face-hover: ButtonFace;
+    --button-face-pressed: ButtonFace;
+    --button-border: CanvasText;
+    --table-header: ButtonFace;
+    --table-hover: Canvas;
+    --table-selection: Highlight;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration: 0ms;
+  }
+}
+
+@media (forced-colors: active) {
+  :root {
+    --color-background: Canvas;
+    --color-surface: Canvas;
+    --color-foreground: CanvasText;
+    --color-border: CanvasText;
+    --color-primary: Highlight;
+    --color-ring: Highlight;
+    --glass-tint: Canvas;
+    --glass-sheen: none;
+    --button-face: ButtonFace;
+    --button-face-hover: ButtonFace;
+    --button-face-pressed: ButtonFace;
+    --table-selection: Highlight;
+  }
+}
