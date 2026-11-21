@@ -6,6 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/expires0n/minemanager/releases/latest"><img src="https://img.shields.io/github/v/release/expires0n/minemanager?include_prereleases&label=release&style=flat-square" alt="Latest release"></a>
+  <a href="https://github.com/expires0n/minemanager/actions/workflows/release.yml"><img src="https://github.com/expires0n/minemanager/actions/workflows/release.yml/badge.svg" alt="Release workflow"></a>
   <img src="https://img.shields.io/badge/status-public%20beta-orange?style=flat-square" alt="Public beta">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D6?style=flat-square" alt="Windows 10 and 11">
