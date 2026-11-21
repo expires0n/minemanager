@@ -1,0 +1,71 @@
+name: release
+
+# Pushing a v* tag builds dist\MineManager.exe with the in-box .NET Framework compiler,
+# packages the portable zip with packaging\make-portable.ps1 and publishes it as a
+# pre-release (beta). workflow_dispatch builds the zip and keeps it as a workflow
+# artifact only, without touching releases.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  portable:
+    name: Build portable zip
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build EXE and portable zip
+        shell: pwsh
+        run: |
+          $version = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "dev" }
+          ./packaging/make-portable.ps1 -Version $version
+          $zip = "MineManager-$version-portable.zip"
+          if (-not (Test-Path $zip)) { throw "Expected package was not created: $zip" }
+          "ZIP_NAME=$zip" >> $env:GITHUB_ENV
+          "VERSION=$version" >> $env:GITHUB_ENV
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $zip" | Set-Content -Encoding ascii SHA256SUMS.txt
+
+      - name: Verify package contents and file version
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $entries = [IO.Compression.ZipFile]::OpenRead((Resolve-Path $env:ZIP_NAME)).Entries |
+            ForEach-Object { $_.FullName }
+          $required = @("MineManager.exe", "README.md", "LICENSE", "NOTICE", "PORTABLE-README.txt")
+          foreach ($file in $required) {
+            if ($entries -notcontains $file) { throw "Portable zip is missing $file" }
+          }
+          $exe = Get-Item dist\MineManager.exe
+          "MineManager.exe {0:N0} bytes, version {1}" -f $exe.Length, $exe.VersionInfo.FileVersion
+          if ($exe.Length -ge 1MB) { throw "Unexpected EXE size: $($exe.Length) bytes" }
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: portable-zip
+          path: |
+            ${{ env.ZIP_NAME }}
+            SHA256SUMS.txt
+          if-no-files-found: error
+
+      - name: Publish GitHub pre-release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create $env:VERSION `
+            "$env:ZIP_NAME" `
+            "SHA256SUMS.txt" `
+            --title "MineManager $env:VERSION" `
+            --notes-file packaging\RELEASE-NOTES.md `
+            --prerelease `
+            --verify-tag

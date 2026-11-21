@@ -412,7 +412,8 @@ tests/          Smoke.cs (off-screen UI check, not shipped)
 docs/           KAYNAK-DEGERLENDIRME.md (BCU + WinUtil evaluation, safety review, checklist)
 design-system/  Aero tokens (tokens.json → aero-tokens.css, light + dark), MASTER.md, screens/
 dist/           compiled single file (not committed; released as a portable zip)
-packaging/      make-portable.ps1 (build + zip) and the readme inside the zip
+.github/        release workflow: v* tag → build → portable zip → pre-release
+packaging/      make-portable.ps1 (build + zip), release notes and the readme inside the zip
 CHANGELOG.md    version history
 ROADMAP.md      what is planned next
 LICENSE/NOTICE  MIT licence and third-party attribution
@@ -896,7 +897,8 @@ tests/          Smoke.cs (ekran dışı UI kontrolü; dağıtılan EXE'ye dahil 
 docs/           KAYNAK-DEGERLENDIRME.md (BCU + WinUtil değerlendirmesi, güvenlik incelemesi, liste)
 design-system/  Aero tokenları (tokens.json → aero-tokens.css, açık + koyu), MASTER.md, screens/
 dist/           derlenmiş tek dosya (depoda tutulmaz; portable zip olarak yayınlanır)
-packaging/      make-portable.ps1 (derleme + zip) ve zip içindeki beni-oku
+.github/        release iş akışı: v* etiketi → derleme → portable zip → pre-release
+packaging/      make-portable.ps1 (derleme + zip), sürüm notları ve zip içindeki beni-oku
 CHANGELOG.md    sürüm geçmişi
 ROADMAP.md      sıradaki planlar
 LICENSE/NOTICE  MIT lisansı ve üçüncü taraf atıfları
