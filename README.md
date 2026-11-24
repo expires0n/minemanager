@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/expires0n/minemanager/releases/latest"><img src="https://img.shields.io/github/v/release/expires0n/minemanager?include_prereleases&label=release&style=flat-square" alt="Latest release"></a>
+  <a href="https://github.com/expires0n/minemanager/releases"><img src="https://img.shields.io/github/v/release/expires0n/minemanager?include_prereleases&label=release&style=flat-square" alt="Latest release"></a>
   <a href="https://github.com/expires0n/minemanager/actions/workflows/release.yml"><img src="https://github.com/expires0n/minemanager/actions/workflows/release.yml/badge.svg" alt="Release workflow"></a>
   <img src="https://img.shields.io/badge/status-public%20beta-orange?style=flat-square" alt="Public beta">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT license"></a>
@@ -35,7 +35,7 @@ hardware information, read-only diagnostics and guided recovery.
 > Read the confirmation dialogs, back up what matters, and follow [CHANGELOG.md](CHANGELOG.md) for
 > changes and [ROADMAP.md](ROADMAP.md) for what is next.
 
-[**English**](#english) · [**Türkçe**](#tr) · [**Download**](https://github.com/expires0n/minemanager/releases/latest)
+[**English**](#english) · [**Türkçe**](#tr) · [**Download**](https://github.com/expires0n/minemanager/releases)
 
 ---
 
@@ -139,7 +139,7 @@ The full set — both themes, both languages, 320 px layouts, dialogs and toasts
 ## Quick start
 
 1. Download `MineManager-<version>-portable.zip` from
-   [Releases](https://github.com/expires0n/minemanager/releases/latest), extract it anywhere
+   [Releases](https://github.com/expires0n/minemanager/releases), extract it anywhere
    (USB stick, desktop, a tools folder) and run `MineManager.exe` — or build it yourself with
    `build.bat`.
 2. Accept the UAC prompt.
@@ -668,7 +668,7 @@ Tam set — iki tema, iki dil, 320 px yerleşimler, pencereler ve toast'lar —
 
 ## Hızlı başlangıç
 
-1. [Releases](https://github.com/expires0n/minemanager/releases/latest) sayfasından
+1. [Releases](https://github.com/expires0n/minemanager/releases) sayfasından
    `MineManager-<sürüm>-portable.zip` dosyasını indirin, istediğiniz yere açın (USB bellek,
    masaüstü, araç klasörü) ve `MineManager.exe` dosyasını çalıştırın — veya `build.bat` ile kendiniz
    derleyin.
