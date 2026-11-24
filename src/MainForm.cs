@@ -231,14 +231,16 @@ namespace MineManager
         private Panel _host;
         private AeroStatusBar _status;
         private UserControl[] _pages;
-        private const int PageCount = 7;
-        private const int PageSettings = 6;
+        private const int PageCount = 9;
+        private const int PageSettings = 8;
         private CleanerPage _cleaner;
         private MemoryPage _memory;
         private UninstallerPage _uninstaller;
         private TweaksPage _tweaks;
         private ConfigPage _config;
         private HardwarePage _hardware;
+        private DiagnosticsPage _diagnostics;
+        private RecoveryPage _recovery;
         private SettingsPage _settings;
         private Timer _timer;
         private int _tick;
@@ -328,6 +330,9 @@ namespace MineManager
             _nav.AddItem(L.T("Tweaks"), "gear");
             _nav.AddItem(L.T("Config"), "shield");
             _nav.AddItem(L.T("Hardware"), "chip");
+            _nav.AddItem(L.T("Diagnostics"), "info");
+            _nav.AddHeader(L.T("RECOVERY"));
+            _nav.AddItem(L.T("Recovery"), "repair");
             _nav.AddHeader(L.T("APP"));
             _nav.AddItem(L.T("Settings"), "sliders");
             _layout.Controls.Add(_nav, 0, 0);
@@ -351,8 +356,10 @@ namespace MineManager
             _tweaks = new TweaksPage();
             _config = new ConfigPage();
             _hardware = new HardwarePage();
+            _diagnostics = new DiagnosticsPage();
+            _recovery = new RecoveryPage();
             _settings = new SettingsPage();
-            _pages = new UserControl[] { _cleaner, _memory, _uninstaller, _tweaks, _config, _hardware, _settings };
+            _pages = new UserControl[] { _cleaner, _memory, _uninstaller, _tweaks, _config, _hardware, _diagnostics, _recovery, _settings };
             for (int i = 0; i < _pages.Length; i++)
             {
                 _pages[i].Dock = DockStyle.Fill;
@@ -399,6 +406,8 @@ namespace MineManager
             if (index == 3) _tweaks.OnShown();
             if (index == 4) _config.OnShown();
             if (index == 5) _hardware.OnShown();
+            if (index == 6) _diagnostics.OnShown();
+            if (index == 7) _recovery.OnShown();
         }
 
         private void Tick()

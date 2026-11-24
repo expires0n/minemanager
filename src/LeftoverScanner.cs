@@ -8,7 +8,7 @@ using Microsoft.Win32;
 
 namespace MineManager
 {
-    internal enum LeftoverKind { Folder, File, RegKey, RegValue }
+    internal enum LeftoverKind { Folder, File, RegKey, RegValue, Task, PathEntry }
 
     internal class LeftoverItem
     {
@@ -28,6 +28,8 @@ namespace MineManager
                     case LeftoverKind.Folder: return L.T("Folder");
                     case LeftoverKind.File: return L.T("File");
                     case LeftoverKind.RegValue: return L.T("Registry value");
+                    case LeftoverKind.Task: return L.T("Scheduled task");
+                    case LeftoverKind.PathEntry: return L.T("PATH entry");
                     default: return L.T("Registry key");
                 }
             }
@@ -39,6 +41,8 @@ namespace MineManager
             {
                 if (Kind == LeftoverKind.RegValue)
                     return Path + "  \\  " + ValueName;
+                if (Kind == LeftoverKind.PathEntry)
+                    return Path + "  \\  Path  =  " + ValueName;
                 return Path;
             }
         }
@@ -47,13 +51,14 @@ namespace MineManager
         {
             get
             {
-                if (Kind == LeftoverKind.RegKey || Kind == LeftoverKind.RegValue) return "-";
+                if (Kind == LeftoverKind.RegKey || Kind == LeftoverKind.RegValue ||
+                    Kind == LeftoverKind.Task || Kind == LeftoverKind.PathEntry) return "-";
                 return Fmt.Size(Size);
             }
         }
     }
 
-    internal static class LeftoverScanner
+    internal static partial class LeftoverScanner
     {
         private static readonly string[] Stop =
         {
@@ -178,6 +183,41 @@ namespace MineManager
             return MatchStrong(flatCandidate, tokens, out hits);
         }
 
+        /// <summary>
+        /// Product matcher shared by the folder, service, Run and shortcut passes:
+        /// full product name inside the candidate, or two strong tokens together.
+        /// </summary>
+        private static bool ContainsProduct(string flatCandidate, Keywords kw, out int hits)
+        {
+            hits = 0;
+            if (flatCandidate == null || flatCandidate.Length == 0) return false;
+            string flatName = kw.FlatName;
+            if (flatName.Length >= 5 && flatCandidate.IndexOf(flatName, StringComparison.Ordinal) >= 0)
+            {
+                hits = 2;
+                return true;
+            }
+            if (flatCandidate.Length >= 6 && flatName.Length >= 5 &&
+                flatName.IndexOf(flatCandidate, StringComparison.Ordinal) >= 0)
+            {
+                hits = 2;
+                return true;
+            }
+            int found = 0;
+            for (int i = 0; i < kw.Strong.Count; i++)
+            {
+                string t = kw.Strong[i];
+                if (t.Length < 4) continue;
+                if (flatCandidate.IndexOf(t, StringComparison.Ordinal) >= 0) found++;
+            }
+            if (found >= 2)
+            {
+                hits = found;
+                return true;
+            }
+            return MatchStrong(flatCandidate, kw.Strong, out hits);
+        }
+
         private static bool IsSkippedFolder(string path)
         {
             string name;
@@ -230,9 +270,22 @@ namespace MineManager
             if (progress != null) progress(L.T("Registry scanning..."));
             ScanRegistry(p, kw, found, seen);
 
+            // 3b) registry integrations: App Paths, ProgID, shell extensions, COM,
+            //     firewall rules, compatibility layers and the PATH value.
+            if (progress != null) progress(L.T("Registry integrations..."));
+            ScanRegistryExtras(p, kw, found, seen);
+
             // 4) shortcuts
             if (progress != null) progress(L.T("Scanning shortcuts..."));
             ScanShortcuts(kw, found, seen);
+
+            // 5) scheduled tasks whose actions point at the product
+            if (progress != null) progress(L.T("Scanning scheduled tasks..."));
+            ScanTasks(p, kw, found, seen);
+
+            // 6) loose files: leftover .reg / .ini / .log dumps next to the product
+            if (progress != null) progress(L.T("Scanning loose files..."));
+            ScanLooseFiles(kw, found, seen);
 
             return found;
         }
@@ -263,7 +316,7 @@ namespace MineManager
 
                 int hits;
                 string flat = Flat(Path.GetFileName(sub));
-                if (ContainsAny(flat, kw.Strong, out hits) && !seen.Contains(sub))
+                if (ContainsProduct(flat, kw, out hits) && !seen.Contains(sub))
                 {
                     int f;
                     LeftoverItem it = new LeftoverItem();
@@ -327,7 +380,7 @@ namespace MineManager
                             bool byPath = kw.InstallDir.Length > 0 &&
                                 img.IndexOf(kw.InstallDir, StringComparison.OrdinalIgnoreCase) >= 0;
                             int hits;
-                            bool byName = ContainsAny(Flat(subs[i]), kw.Strong, out hits);
+                            bool byName = ContainsProduct(Flat(subs[i]), kw, out hits);
                             if (byPath || byName)
                                 AddReg(found, seen, full, byPath ? "High" : "Medium");
                         }
@@ -360,7 +413,7 @@ namespace MineManager
                             bool byPath = kw.InstallDir.Length > 0 &&
                                 data.IndexOf(kw.InstallDir, StringComparison.OrdinalIgnoreCase) >= 0;
                             int hits;
-                            bool byName = ContainsAny(Flat(names[i]), kw.Strong, out hits);
+                            bool byName = ContainsProduct(Flat(names[i]), kw, out hits);
                             if (!byPath && !byName) continue;
 
                             LeftoverItem it = new LeftoverItem();
@@ -481,7 +534,7 @@ namespace MineManager
                 {
                     string name = Path.GetFileNameWithoutExtension(files[i]);
                     int hits;
-                    if (!ContainsAny(Flat(name), kw.Strong, out hits)) continue;
+                    if (!ContainsProduct(Flat(name), kw, out hits)) continue;
                     if (seen.Contains(files[i])) continue;
                     LeftoverItem it = new LeftoverItem();
                     it.Kind = LeftoverKind.File;
@@ -499,15 +552,61 @@ namespace MineManager
 
         // --------------------------------------------------------------- deletion
 
+        /// <summary>
+        /// Revo order: active references (scheduled tasks) first, then files and folders,
+        /// then registry values and keys, and the orphaned Uninstall entry last so a failed
+        /// run never hides a still-installed product behind a deleted entry.
+        /// </summary>
+        private static int KindOrder(LeftoverKind k)
+        {
+            switch (k)
+            {
+                case LeftoverKind.Task: return 0;
+                case LeftoverKind.Folder: return 1;
+                case LeftoverKind.File: return 2;
+                case LeftoverKind.PathEntry: return 3;
+                case LeftoverKind.RegValue: return 4;
+                default: return 5;
+            }
+        }
+
         public static long Delete(List<LeftoverItem> items, Action<string> log, out int errors)
         {
             errors = 0;
             long freed = 0;
-            foreach (LeftoverItem it in items)
+            List<LeftoverItem> ordered = new List<LeftoverItem>(items);
+            ordered.Sort(delegate(LeftoverItem a, LeftoverItem b)
+            {
+                int c = KindOrder(a.Kind).CompareTo(KindOrder(b.Kind));
+                if (c != 0) return c;
+                return string.Compare(a.Path, b.Path, StringComparison.OrdinalIgnoreCase);
+            });
+            foreach (LeftoverItem it in ordered)
             {
                 if (!it.Checked) continue;
                 try
                 {
+                    if (it.Kind == LeftoverKind.Task)
+                    {
+                        if (TaskTools.Delete(it.Path))
+                        {
+                            if (log != null) log(L.F("Deleted: {0}", it.Path));
+                        }
+                        else
+                        {
+                            errors++;
+                            if (log != null) log(L.F("Failed: {0}", it.Path));
+                        }
+                        continue;
+                    }
+                    if (it.Kind == LeftoverKind.PathEntry)
+                    {
+                        bool ok;
+                        Reg.RemovePathEntry(it.Path, it.ValueName, out ok);
+                        if (ok) { if (log != null) log(L.F("Deleted: {0} \\ {1}", it.Path, it.ValueName)); }
+                        else { errors++; if (log != null) log(L.F("Failed: {0}", it.Path)); }
+                        continue;
+                    }
                     if (it.Kind == LeftoverKind.RegKey)
                     {
                         bool ok;
@@ -540,7 +639,10 @@ namespace MineManager
             return freed;
         }
 
-        /// <summary>Silmeden once kayit defteri anahtarlarini .reg olarak yedekler.</summary>
+        /// <summary>
+        /// Silmeden once kayit defteri anahtarlarini .reg olarak yedekler, zamanlanmis
+        /// gorevleri XML olarak kopyalar ve tek bir islem klasorunde toplar.
+        /// </summary>
         public static string BackupRegistry(List<LeftoverItem> items, Action<string> log)
         {
             List<string> keys = new List<string>();
@@ -572,6 +674,26 @@ namespace MineManager
             catch { return null; }
 
             int ok = 0;
+
+            // scheduled tasks: copy the task XML so the exact definition survives
+            int tasks = 0;
+            foreach (LeftoverItem it in items)
+            {
+                if (!it.Checked || it.Kind != LeftoverKind.Task) continue;
+                try
+                {
+                    string src = TaskTools.XmlPath(it.Path);
+                    if (src.Length > 0 && File.Exists(src))
+                    {
+                        string name = "task_" + it.Path.Trim('\\').Replace("\\", "_") + ".xml";
+                        foreach (char c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '_');
+                        File.Copy(src, Path.Combine(dir, name), true);
+                        tasks++;
+                    }
+                }
+                catch { }
+            }
+
             foreach (string key in keys)
             {
                 try
@@ -598,7 +720,7 @@ namespace MineManager
 
             try
             {
-                if (ok == 0) { Directory.Delete(dir, true); return null; }
+                if (ok == 0 && tasks == 0) { Directory.Delete(dir, true); return null; }
             }
             catch { }
             string result = L.F("{0} keys backed up → {1}", ok, dir);

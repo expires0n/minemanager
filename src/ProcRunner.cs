@@ -105,18 +105,29 @@ namespace MineManager
 
         public static RunResult Run(string exe, string args, int timeoutSec, Action<string> onLine, CancelFlag cancel)
         {
-            return Run(exe, args, timeoutSec, onLine, cancel, false);
+            return Run(exe, args, timeoutSec, onLine, cancel, false, Encoding.UTF8);
         }
 
         /// <summary>Runs even while the app is closing: restore steps must still finish.</summary>
         public static RunResult RunUrgent(string exe, string args, int timeoutSec, Action<string> onLine,
             CancelFlag cancel)
         {
-            return Run(exe, args, timeoutSec, onLine, cancel, true);
+            return Run(exe, args, timeoutSec, onLine, cancel, true, Encoding.UTF8);
+        }
+
+        /// <summary>
+        /// Same runner, but with the console encoding the tool actually writes. SFC
+        /// emits UTF-16LE when redirected, while DISM and CHKDSK use the OEM code
+        /// page; decoding them as UTF-8 turns SFC output into NUL-separated noise.
+        /// </summary>
+        public static RunResult RunEncoded(string exe, string args, int timeoutSec, Action<string> onLine,
+            CancelFlag cancel, Encoding outputEncoding)
+        {
+            return Run(exe, args, timeoutSec, onLine, cancel, false, outputEncoding);
         }
 
         private static RunResult Run(string exe, string args, int timeoutSec, Action<string> onLine,
-            CancelFlag cancel, bool urgent)
+            CancelFlag cancel, bool urgent, Encoding outputEncoding)
         {
             RunResult r = new RunResult();
             if (_shuttingDown && !urgent)
@@ -134,8 +145,9 @@ namespace MineManager
                 psi.CreateNoWindow = true;
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;
-                psi.StandardOutputEncoding = Encoding.UTF8;
-                psi.StandardErrorEncoding = Encoding.UTF8;
+                Encoding enc = outputEncoding ?? Encoding.UTF8;
+                psi.StandardOutputEncoding = enc;
+                psi.StandardErrorEncoding = enc;
                 // Uninstallers/legacy panels must see a desktop-sized console, not 80x25.
                 psi.WindowStyle = ProcessWindowStyle.Hidden;
 

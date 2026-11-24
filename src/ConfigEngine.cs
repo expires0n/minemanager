@@ -144,8 +144,11 @@ namespace MineManager
                 }
 
                 Log(log, L.F("Installing {0}...", name));
+                // /LimitAccess: never reach out to Windows Update for payload. MineManager
+                // downloads nothing at runtime; if the component store has no source the
+                // step fails with a clear message instead of fetching gigabytes silently.
                 RunResult r = ProcRunner.Run(Sys("dism.exe"),
-                    "/online /enable-feature /featurename:" + name + " /all /norestart",
+                    "/online /enable-feature /featurename:" + name + " /all /norestart /LimitAccess",
                     timeout, log, cancel);
 
                 if (Stopped(cancel) || r.Cancelled)
@@ -168,6 +171,13 @@ namespace MineManager
                 }
                 if (r.ExitCode != 0)
                 {
+                    // 0x800F081F = the source files could not be found (offline policy).
+                    if (r.ExitCode == unchecked((int)0x800F081F))
+                    {
+                        error = L.F("{0}: the source files are not on this machine and Windows Update is not used (offline policy). Add a local source or install the feature from Settings > Apps > Optional features.", name);
+                        Log(log, error);
+                        return false;
+                    }
                     error = L.F("{0} failed with exit code {1}.", name, r.ExitCode);
                     Log(log, error);
                     return false;

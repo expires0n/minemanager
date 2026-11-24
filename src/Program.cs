@@ -12,7 +12,9 @@ namespace MineManager
         {
             AppSettings.Load();
             Aero.SetDark(AppSettings.Dark);
-            DarkMode.Prepare(true);
+            // Only opt into the global dark app mode when the app starts dark.
+            // Forcing it in light mode makes native text boxes draw light text.
+            DarkMode.Prepare(AppSettings.Dark);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 

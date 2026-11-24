@@ -11,12 +11,12 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D6?style=flat-square" alt="Windows 10 and 11">
   <img src="https://img.shields.io/badge/.NET%20Framework-4.8-512BD4?style=flat-square" alt=".NET Framework 4.8">
-  <img src="https://img.shields.io/badge/size-~615%20KB-lightgrey?style=flat-square" alt="Approximately 615 KB">
+  <img src="https://img.shields.io/badge/size-~720%20KB-lightgrey?style=flat-square" alt="Approximately 720 KB">
 </p>
 
 A single-EXE, install-free Windows system tool: **PC Manager + Bulk Crap Uninstaller + CPU-Z +
-WinUtil** style features in one Aero-themed window — cleanup, RAM, uninstaller, tweaks, config
-and hardware information.
+WinUtil** style features in one Aero-themed window — cleanup, RAM, uninstaller, tweaks, config,
+hardware information, read-only diagnostics and guided recovery.
 
 > ### 🚧 Public beta — actively developed
 >
@@ -27,7 +27,7 @@ and hardware information.
 > - **Scope expands every release** — startup/service managers, cleanup profiles, disk analyzer,
 >   driver inventory and more are on the [roadmap](ROADMAP.md).
 > - **Data grows every release** — cleanup categories, tweaks and config actions are catalogue-driven
->   and the counts in this README are a snapshot of `v0.9.1`.
+>   and the counts in this README are a snapshot of `v0.9.2`.
 > - **More languages are coming** — English and Turkish ship today.
 > - **Expect rough edges.** Please open an [issue](https://github.com/expires0n/minemanager/issues)
 >   with your Windows build, the page and what you expected.
@@ -60,7 +60,9 @@ and hardware information.
   - [4. Tweaks](#4-tweaks)
   - [5. Config](#5-config)
   - [6. Hardware](#6-hardware)
-  - [7. Settings](#7-settings)
+  - [7. Diagnostics](#7-diagnostics)
+  - [8. Recovery](#8-recovery)
+  - [9. Settings](#9-settings)
 - [Safety model](#safety-model)
 - [Technical](#technical)
 - [Build](#build)
@@ -77,7 +79,7 @@ MineManager is a portable Windows utility for people who want one small tool ins
 installers. It targets **Windows 10/11** (the Aero theme also renders on Windows 7, where only the
 registry-based features are meaningful).
 
-- **One file.** `dist\MineManager.exe`, ~615 KB, `anycpu`, no DLLs, no runtime to install.
+- **One file.** `dist\MineManager.exe`, ~720 KB, `anycpu`, no DLLs, no runtime to install.
 - **Two languages, two themes.** English (default) + Turkish, light Aero + dark graphite Aero.
   Every visible string is localised; a missing translation falls back to English.
 - **Elevated by manifest** (`requireAdministrator`) because it writes system folders and registry.
@@ -92,13 +94,15 @@ registry-based features are meaningful).
 
 | | |
 |---|---|
-| Binary | `dist\MineManager.exe` — single file, ~615 KB, portable |
+| Binary | `dist\MineManager.exe` — single file, ~720 KB, portable |
 | Runtime | .NET Framework 4.8 (in-box on Windows 10/11) |
 | UI | English (default) + Turkish; light/dark Aero; custom-drawn |
-| Pages | 7 |
+| Pages | 9 |
 | Cleanup categories | 13 |
 | Tweaks | 67 — 18 essential · 22 advanced · 25 preferences · 2 performance plans |
 | Config actions | 32 — 9 features · 6 fixes · 14 legacy panels · 2 profile · 1 remote |
+| Diagnostics | 7 read-only checks: summary, file locks, error codes, battery, displays, route, maintenance timeline |
+| Recovery | DISM → SFC → CHKDSK `/scan`, with a per-step verdict and a warning report |
 | Uninstaller | registry union (HKLM 64-bit, `WOW6432Node`, HKCU), 6 detected installer families |
 | Concurrency | one long job at a time; language/theme switching is blocked while it runs |
 
@@ -109,7 +113,7 @@ is not feature-complete and it is not frozen.
 
 | | |
 |---|---|
-| Current stage | Public beta (`v0.9.1`); the project stays beta until 1.0 |
+| Current stage | Public beta (`v0.9.2`); the project stays beta until 1.0 |
 | Scope | Every release adds tools and pages; see the [roadmap](ROADMAP.md) |
 | Catalogues | Cleanup categories, tweaks and config actions keep growing; counts here are a snapshot |
 | Languages | English + Turkish now; German, Spanish and Dutch are planned |
@@ -170,6 +174,8 @@ you choose what to delete.
 
 Files in use are skipped silently and scheduled for deletion on the next boot with
 `MoveFileEx(MOVEFILE_DELAY_UNTIL_REBOOT)`; the error count is shown in the **Status** column.
+A file modified after the scan is left alone and counted separately, so a fresh download is never
+swept away by a scan from ten minutes ago.
 
 ### 2. RAM
 
@@ -179,6 +185,8 @@ Files in use are skipped silently and scheduled for deletion on the next boot wi
   standby list and the low-priority standby list via `NtSetSystemInformation`. Needs admin; when
   not elevated the log says so instead of failing silently.
 - Top 15 memory consumers, a 1-second live counter and an activity log.
+- **Impact card:** available memory before → right after → 30 seconds after a clean, with the
+  system-wide disclaimer. It is a measurement, not a claim that MineManager freed all of it.
 
 ### 3. Uninstaller
 
@@ -192,7 +200,9 @@ concepts (Apache-2.0). See `docs/KAYNAK-DEGERLENDIRME.md` for the full evaluatio
 - **Remove:** runs the program's own uninstaller (`msiexec /I...` is rewritten to `/X...`).
 - **Remove + Scan / Scan leftovers / Force delete:** the existing flows are unchanged.
 - **Remove selected:** a checkbox column feeds a **strictly sequential** queue with progress and a
-  **Stop** button, so MSI error 1618 (another installation in progress) cannot happen.
+  **Stop** button. If Windows Installer reports 1618 (another installation in progress), the queue
+  waits 15/30/60/60 seconds and retries the same item instead of killing the other installer; 1641
+  stops the queue because the machine is already restarting.
 - **Quiet** is **off every session**. Turning it on shows a confirmation dialog that lists each
   program with its exact command line and defaults to Cancel. Silent commands are only generated
   for MSI (`/X{GUID} /qn /norestart`), Inno Setup (`/VERYSILENT /SUPPRESSMSGBOXES /NORESTART`) and
@@ -203,6 +213,14 @@ concepts (Apache-2.0). See `docs/KAYNAK-DEGERLENDIRME.md` for the full evaluatio
 - **Details:** publisher, version, install folder/source, registry path, product code, both command
   lines.
 - **Export CSV:** UTF-8 with BOM, quote escaping and a `= + - @` formula guard.
+- **Leftover scan:** registry integrations (App Paths, ProgID, shell/COM, firewall, compatibility),
+  scheduled tasks, PATH entries and loose product files are inspected as well as folders and Run
+  entries. Deletions run tasks → files → registry → the orphaned Uninstall entry last, and task XML
+  is copied into the backup package.
+- **Clean backups:** deletes MineManager's own `.reg`/task-XML backup packages after showing their
+  size and an explicit warning that MineManager undo ends for them.
+- **Locked leftovers:** when a checked item is still present after deletion, Restart Manager names
+  the process holding it.
 
 **Before deleting registry data:** keys are exported with `reg.exe export` into
 `MineManager-backup\<timestamp>\` next to the EXE, as `.reg` files you can double-click to restore.
@@ -226,7 +244,8 @@ The catalogue is generated into `src/TweaksData.cs` from `tools/data/winutil-twe
 - **Undo restores the real previous value.** Before the first write, current values are snapshotted
   into `MineManager.undo.tsv` next to the EXE; WinUtil's `OriginalValue` is only a fallback.
   `<RemoveEntry>` deletes the value, never the key. Snapshot rows are validated against the compiled
-  catalogue, so a tampered file cannot make the elevated app write arbitrary values.
+  catalogue, so a tampered file cannot make the elevated app write arbitrary values. Undo skips a
+  value that changed after MineManager wrote it and reports the conflict instead of overwriting it.
 - If a registry/service/task step fails, the applied steps are rolled back in reverse order. A
   script failure or timeout rolls those steps back but never auto-runs `UndoScript`.
 - **No runtime downloads.** WinUtil tweaks that need a download (O&O ShutUp10++) or a picker UI
@@ -241,7 +260,8 @@ OpenSSH**:
 - **Features:** .NET Framework (2/3/4), Hyper-V, Legacy Media Components (WMP/DirectPlay), WSL,
   NFS, Windows Sandbox, Registry Backup (built-in periodic backup) and Legacy F8 Boot Recovery
   enable/disable. Installed state is read from DISM; **Install Features** runs
-  `dism /online /enable-feature` and reports 3010 as "restart required".
+  `dism /online /enable-feature` and reports 3010 as "restart required". `/LimitAccess` keeps DISM
+  offline; a missing payload returns `0x800F081F` with an explanation instead of a silent download.
 - **Fixes:** AutoLogon, Network reset (`netsh winsock reset` / `int ip reset`, after saving
   `netsh -c interface dump`), NTP server (`w32tm … pool.ntp.org`), System corruption scan
   (`chkdsk /scan` → `dism /restorehealth` → `sfc /scannow`), Windows Update reset (stop services,
@@ -267,9 +287,51 @@ WMI + registry in eight sections: CPU (cores/threads, socket, L2/L3, virtualisat
 stepping) · Motherboard & BIOS · Memory (per-module type/speed/vendor/part number) · GPU (real VRAM,
 resolution, driver) · Storage (disks + drive usage) · OS (build, uptime) · Network · Other.
 
-**Copy** and **Save TXT** export the report.
+**Copy** and **Save TXT** open a preview first: the exact text is shown and identifiers (computer
+name, user, profile path, serials, IP/MAC) can be masked before anything leaves the app. Reports are
+never uploaded.
 
-### 7. Settings
+After the first reading, a **Changes since the last reading** card compares the current inventory
+with the previous one — changed values, appeared/missing items, and "no data this time" instead of
+pretending an unreadable value is a match.
+
+### 7. Diagnostics
+
+Read-only checks. Nothing is deleted or changed.
+
+- **System summary** — Windows edition/build, uptime, free space on the system drive and whether
+  the app is elevated.
+- **What is using this file?** — Restart Manager lookup for a file or folder, naming the locking
+  process. "No application" is a real answer, not a failure.
+- **Error code decoder** — decimal, hex or HRESULT input, with the Win32/MSI meaning.
+- **Battery & sleep** — `powercfg` battery report: design capacity, reported full charge, health
+  ratio and cycle count. Missing values stay missing instead of becoming zero.
+- **Display connections** — measures the active display paths and compares a second measurement
+  after a cable, port or adapter change.
+- **Which path does Windows use?** — the local route Windows picks for an IP address; it does not
+  test whether the destination answers.
+- **Maintenance timeline** — recent setup, update, crash and maintenance events from the event log.
+
+Cards collapse when empty and expand only for the tool you ran. Inputs follow the active light/dark
+theme, including the native text box and its scroll bar.
+
+### 8. Recovery
+
+**Start all** runs the documented repair sequence in order:
+
+`DISM /Cleanup-Image /CheckHealth` → `/ScanHealth` → `/RestoreHealth` → `sfc /scannow` → `chkdsk C: /scan`
+
+Every step shows a live state and the log includes the exact command. When the run ends, a warning
+report lists each step with one of six verdicts — **Clean**, **Repaired**, **Issues found**,
+**Failed**, **Stopped** or **Unclear** — plus the important log line and a restart note when one is
+needed. The summary strip stays on the page and **Report** opens the same text again.
+
+Windows does not expose a reliable repaired-file count for SFC or DISM, so the report names the
+step that repaired files instead of inventing "N files fixed". `chkdsk` runs with `/scan` only: it
+never repairs the disk, forces a reboot or runs `/f`/`/r`. Recovery needs administrator rights and
+can take 30–60 minutes.
+
+### 9. Settings
 
 - **Language:** English (default) / Türkçe. Applied to the whole UI immediately.
 - **Appearance:** Light / Dark. The dark palette is graphite Aero; glass, gloss, grids and scroll
@@ -295,7 +357,7 @@ resolution, driver) · Storage (disks + drive usage) · OS (build, uptime) · Ne
 
 - **C# 5 / WinForms, .NET Framework 4.8**, compiled with the in-box
   `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe`. No SDK, no NuGet, no external DLLs.
-- **Single EXE**, ~615 KB, `anycpu`, no dependencies.
+- **Single EXE**, ~720 KB, `anycpu`, no dependencies.
 - **Two languages, two themes:** English default + Turkish; light Aero + dark graphite Aero.
   `src/Lang.cs` (core dictionary) plus per-feature fragments `LangUninstall`, `LangTweaks`,
   `LangTweaksUi`, `LangConfig`; theme in `src/Theme.cs`, `src/AeroDark.cs`, `src/AppSettings.cs`.
@@ -358,10 +420,10 @@ has no Python dependency.
 Portable release package (EXE + README + LICENSE + NOTICE, zipped):
 
 ```
-powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.1
+powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.2
 ```
 
-It writes `MineManager-v0.9.1-portable.zip` and prints the SHA-256 plus the ready-to-run
+It writes `MineManager-v0.9.2-portable.zip` and prints the SHA-256 plus the ready-to-run
 `gh release create` command. Attach that zip to every GitHub release.
 
 ## Data pipeline
@@ -381,13 +443,16 @@ remote) is curated by hand because most WinUtil entries there are shell commands
 
 ## Verification
 
-- `build.bat` → **0 errors, 0 warnings**; `dist\MineManager.exe` is ~628 KB (under 1 MB).
-- `tests/Smoke.cs` renders the real `MainForm` off-screen in **112 combinations** — 7 pages ×
-  4 widths (1100/940/620/320) × English/Turkish × light/dark — and writes PNGs, so layout,
+- `build.bat` → **0 errors, 0 warnings**; `dist\MineManager.exe` is ~720 KB (under 1 MB).
+- `tests/Smoke.cs` renders the real `MainForm` off-screen in **180 combinations** — 9 pages ×
+  5 widths (1600/1100/940/620/320) × English/Turkish × light/dark — and writes PNGs, so layout,
   clipping, theme and translation regressions are visible without clicking through the app.
   Build it with `-main:MineManager.Smoke`; it is not part of the shipped EXE.
-- Language audit: **520** distinct English keys, **9** intentionally untranslated (product names such
-  as "Inno Setup", "NSIS", "Windows Installer", and separator-only strings).
+- `tests/RecoveryReportTest.cs` checks the recovery parser against clean, repaired, issues, failed,
+  stopped and unknown outputs in English and Turkish, plus the SFC UTF-16 and DISM/CHKDSK OEM
+  output encodings.
+- Language audit: **719** distinct English keys, **16** intentionally untranslated (format-only
+  strings and technology names such as "Inno Setup", "NSIS" and "Windows Installer").
 - Tweak engine self-check: catalog counts (18/22/25/2), no null titles/scripts, no download tokens,
   real HKCU apply → detect → undo round trip, snapshot-over-default restore, rollback after a
   failing step, batch continues past a failure, cancel stops between items.
@@ -402,14 +467,15 @@ remote) is curated by hand because most WinUtil entries there are shell commands
 src/            all source
                 Theme, AeroDark, DarkMode, AppSettings, AeroLogo, AeroToggle,
                 AeroControls, AeroGrid, AeroDialogs, AeroScrollBar, Native, ProcRunner, Sift,
-                Lang + LangUninstall/LangTweaks/LangTweaksUi/LangConfig,
+                Lang + LangUninstall/LangTweaks/LangTweaksUi/LangConfig/LangDiag/LangRecovery,
                 Cleaner, FileTools, MemoryTools, Hardware, Uninstaller, LeftoverScanner,
-                TweakEngine, TweaksData, ConfigData, ConfigEngine,
+                TweakEngine, TweaksData, ConfigData, ConfigEngine, SystemFacts,
+                RecoveryReport, RecoveryTools,
                 MainForm, Program, pages/
 assets/         logo.png (source), app.ico (16–256), logo64.png (embedded title icon)
 tools/          make_icon.py (logo → ico/png), gen_winutil.py (WinUtil JSON → TweaksData.cs),
                 data/winutil-tweaks.json (vendored data)
-tests/          Smoke.cs (off-screen UI check, not shipped)
+tests/          Smoke.cs (off-screen UI check) and RecoveryReportTest.cs (parser check)
 docs/           KAYNAK-DEGERLENDIRME.md (BCU + WinUtil evaluation, safety review, checklist)
 design-system/  Aero tokens (tokens.json → aero-tokens.css, light + dark), MASTER.md, screens/
 dist/           compiled single file (not committed; released as a portable zip)
@@ -443,6 +509,12 @@ LICENSE/NOTICE  MIT licence and third-party attribution
   to the elevating account's profile; this is not detected.
 - Language/theme switching is blocked while a job runs; selections survive the page rebuild through
   `TweakSession`.
+- Diagnostics is strictly read-only: it reads files, routes, event records and battery data, and
+  never deletes or changes anything.
+- The Recovery page runs `chkdsk /scan` only. It never repairs the disk, forces a reboot, or runs
+  `chkdsk /f`/`/r`. DISM and SFC can take 30–60 minutes on a damaged system.
+- Windows does not expose a reliable "N files repaired" count for SFC or DISM. The report names the
+  step that repaired files and never invents a number.
 
 ## Third-party sources and licences
 
@@ -485,7 +557,7 @@ section above.
 > - **Kapsam her sürümde büyüyor** — başlangıç/hizmet yöneticileri, temizlik profilleri, disk
 >   analizi, sürücü envanteri ve daha fazlası [yol haritasında](ROADMAP.md).
 > - **Veri her sürümde büyüyor** — temizlik kategorileri, tweak'ler ve yapılandırma öğeleri katalog
->   tabanlıdır; bu README'deki sayılar `v0.9.1` anlık görüntüsüdür.
+>   tabanlıdır; bu README'deki sayılar `v0.9.2` anlık görüntüsüdür.
 > - **Yeni diller geliyor** — bugün İngilizce ve Türkçe var.
 > - **Pürüzler olabilir.** Windows sürümünüzü, sayfayı ve beklediğiniz davranışı yazarak
 >   [issue](https://github.com/expires0n/minemanager/issues) açın.
@@ -507,7 +579,9 @@ section above.
   - [4. İnce Ayarlar](#tr-tweaks)
   - [5. Yapılandırma](#tr-config)
   - [6. Donanım](#tr-donanim)
-  - [7. Ayarlar](#tr-ayarlar)
+  - [7. Tanılama](#tr-tanilama)
+  - [8. Kurtarma](#tr-kurtarma)
+  - [9. Ayarlar](#tr-ayarlar)
 - [Güvenlik modeli](#tr-guvenlik)
 - [Teknik](#tr-teknik)
 - [Derleme](#tr-derleme)
@@ -523,10 +597,11 @@ section above.
 ## Genel bakış
 
 MineManager, beş ayrı kurulum yerine tek bir küçük araç isteyenler için taşınabilir bir Windows
-sistem aracıdır. Hedef **Windows 10/11**'dir (Aero teması Windows 7'de de çizilir; orada yalnızca
-kayıt defteri tabanlı özellikler anlamlıdır).
+sistem aracıdır. Temizlik, RAM, kaldırıcı, ince ayarlar, yapılandırma, donanım, salt okunur tanılama
+ve yönlendirilmiş kurtarma tek pencerede. Hedef **Windows 10/11**'dir (Aero teması Windows 7'de de
+çizilir; orada yalnızca kayıt defteri tabanlı özellikler anlamlıdır).
 
-- **Tek dosya.** `dist\MineManager.exe`, ~615 KB, `anycpu`, DLL yok, çalışma zamanı kurulumu yok.
+- **Tek dosya.** `dist\MineManager.exe`, ~720 KB, `anycpu`, DLL yok, çalışma zamanı kurulumu yok.
 - **İki dil, iki tema.** İngilizce (varsayılan) + Türkçe, açık Aero + koyu graphite Aero.
   Görünen her metin yerelleştirilmiştir; eksik çeviri İngilizceye düşer.
 - **Manifest ile yönetici** (`requireAdministrator`) — sistem klasörlerine ve kayıt defterine yazar.
@@ -543,14 +618,16 @@ kayıt defteri tabanlı özellikler anlamlıdır).
 
 | | |
 |---|---|
-| Dosya | `dist\MineManager.exe` — tek dosya, ~615 KB, portable |
+| Dosya | `dist\MineManager.exe` — tek dosya, ~720 KB, portable |
 | Çalışma zamanı | .NET Framework 4.8 (Windows 10/11'de hazır) |
 | Arayüz | İngilizce (varsayılan) + Türkçe; açık/koyu Aero; tamamen özel çizim |
-| Sayfa | 7 |
+| Sayfa | 9 |
 | Temizlik kategorisi | 13 |
 | Tweak | 67 — 18 temel · 22 gelişmiş · 25 tercih · 2 performans planı |
 | Yapılandırma öğesi | 32 — 9 özellik · 6 onarım · 14 klasik panel · 2 profil · 1 uzak erişim |
 | Kaldırıcı | kayıt defteri birleşimi (HKLM 64-bit, `WOW6432Node`, HKCU), 6 kurulum ailesi tespiti |
+| Tanılama | 7 salt okunur kontrol: özet, dosya kilidi, hata kodu, pil, ekran, rota, bakım zaman çizelgesi |
+| Kurtarma | DISM → SFC → CHKDSK `/scan`; adım başına sonuç ve uyarı raporu |
 | Eşzamanlılık | aynı anda tek uzun işlem; iş sürerken dil/tema değişimi kilitli |
 
 <a id="tr-durum"></a>
@@ -562,7 +639,7 @@ kayıt defteri tabanlı özellikler anlamlıdır).
 
 | | |
 |---|---|
-| Aşama | Herkese açık beta (`v0.9.1`); proje 1.0'a kadar beta kalır |
+| Aşama | Herkese açık beta (`v0.9.2`); proje 1.0'a kadar beta kalır |
 | Kapsam | Her sürüm yeni araç ve sayfa ekler; [yol haritasına](ROADMAP.md) bakın |
 | Kataloglar | Temizlik kategorileri, tweak'ler ve yapılandırma öğeleri büyümeye devam eder; buradaki sayılar anlık görüntüdür |
 | Diller | Şimdilik İngilizce + Türkçe; Almanca, İspanyolca ve Hollandaca planlanıyor |
@@ -631,6 +708,8 @@ silineceğini siz seçersiniz.
 
 Kullanımda olan dosyalar sessizce atlanır ve bir sonraki açılışta silinmek üzere
 `MoveFileEx(MOVEFILE_DELAY_UNTIL_REBOOT)` ile işaretlenir; hata sayısı **Durum** sütununda görünür.
+Taramadan sonra değişen dosya silinmez ve ayrıca sayılır; böylece on dakika önceki bir tarama yeni
+indirilmiş bir dosyayı süpürmez.
 
 <a id="tr-ram"></a>
 
@@ -642,6 +721,8 @@ Kullanımda olan dosyalar sessizce atlanır ve bir sonraki açılışta silinmek
   değiştirilmiş sayfa listesini, bekleme (standby) listesini ve düşük öncelikli bekleme listesini
   temizler. Yönetici izni gerekir; yönetici değilse günlüğe nedeni yazılır.
 - En çok bellek kullanan 15 süreç, 1 saniyelik canlı sayaç ve işlem günlüğü.
+- **Etki kartı:** temizlikten önce → hemen sonra → 30 saniye sonra kullanılabilir bellek; sistem
+  geneli değişim notuyla birlikte. Bu bir ölçümdür, MineManager tümünü boşalttı iddiası değildir.
 
 <a id="tr-kaldirici"></a>
 
@@ -657,7 +738,9 @@ kavramlarıyla yeniden yazıldı. Ayrıntılı değerlendirme: `docs/KAYNAK-DEGE
 - **Kaldır:** programın kendi kaldırıcısını çalıştırır (`msiexec /I...` otomatik `/X...` yapılır).
 - **Kaldır + Tara / Kalıntı Tara / Zorla Sil:** mevcut akışlar korunur.
 - **Seçilenleri Kaldır:** onay kutusu sütunu, ilerleme ve **Durdur** düğmesi olan **sıralı** bir
-  kuyruğa bağlanır; böylece MSI 1618 (başka kurulum sürüyor) hatası oluşmaz.
+  kuyruğa bağlanır. Windows Installer 1618 (başka kurulum sürüyor) derse kuyruk diğer kurulumu
+  öldürmeden 15/30/60/60 saniye bekleyip aynı öğeyi yeniden dener; 1641 makine zaten yeniden
+  başlıyorsa kuyruğu durdurur.
 - **Sessiz** her oturumda **kapalı** başlar. Açıldığında onay penceresi her programın **tam komut
   satırını** listeler ve varsayılan düğme İptal'dir. Sessiz komut yalnızca MSI
   (`/X{GUID} /qn /norestart`), Inno Setup (`/VERYSILENT /SUPPRESSMSGBOXES /NORESTART`) ve NSIS
@@ -667,6 +750,14 @@ kavramlarıyla yeniden yazıldı. Ayrıntılı değerlendirme: `docs/KAYNAK-DEGE
   **Remove entry** önce `reg export` ile yedek alır, sonra yalnızca o anahtarı siler.
 - **Ayrıntılar:** yayıncı, sürüm, kurulum klasörü/kaynağı, kayıt yolu, ürün kodu ve iki komut satırı.
 - **CSV Dışa Aktar:** UTF-8 BOM, tırnak kaçışı ve `= + - @` formül koruması.
+- **Kalıntı taraması:** klasörler ve Run kayıtlarının yanında kayıt defteri entegrasyonları (App
+  Paths, ProgID, shell/COM, güvenlik duvarı, uyumluluk), zamanlanmış görevler, PATH girdileri ve
+  ürüne ait gevşek dosyalar da incelenir. Silme sırası görevler → dosyalar → kayıt defteri → en son
+  sahipsiz Uninstall kaydıdır; görev XML'i yedek paketine kopyalanır.
+- **Yedekleri temizle:** MineManager'ın kendi `.reg`/görev-XML yedek paketlerini, boyutunu ve
+  "MineManager ile geri alma biter" uyarısını gösterdikten sonra siler.
+- **Kilitli kalıntılar:** silme sonrası hâlâ duran bir öğe varsa Restart Manager onu tutan süreci
+  adlandırır.
 
 **Kayıt defteri silinmeden önce:** anahtarlar `reg.exe export` ile EXE'nin yanındaki
 `MineManager-backup\<tarih-saat>\` klasörüne `.reg` olarak yedeklenir; dosyaya çift tıklayıp geri
@@ -693,7 +784,8 @@ Katalog `tools/data/winutil-tweaks.json` dosyasından `src/TweaksData.cs` içine
   `MineManager.undo.tsv` dosyasına anlık görüntü olarak kaydedilir; WinUtil'ın `OriginalValue`
   değeri yalnızca yedek yoldur. `<RemoveEntry>` değeri siler, anahtarı **silmez**. Anlık görüntü
   satırları derlenmiş katalogla doğrulanır; dosyayı değiştiren biri yükseltilmiş uygulamaya keyfî
-  değer yazdıramaz.
+  değer yazdıramaz. Geri alma, MineManager yazdıktan sonra değişen değeri üzerine yazmaz; çakışmayı
+  atlar ve raporlar.
 - Kayıt defteri/hizmet/görev adımı başarısız olursa uygulanan adımlar ters sırayla geri alınır.
   Betik adımı hata verir veya zaman aşımına uğrarsa bu adımlar geri alınır ama `UndoScript`
   otomatik çalıştırılmaz.
@@ -711,7 +803,8 @@ profili, OpenSSH**:
 - **Özellikler:** .NET Framework (2/3/4), Hyper-V, Eski Medya Bileşenleri (WMP/DirectPlay), WSL,
   NFS, Windows Sandbox, Kayıt Defteri Yedeği (yerleşik periyodik yedekleme) ve Eski F8 Önyükleme
   Kurtarma aç/kapat. Kurulu durum DISM'den okunur; **Özellikleri Kur** `dism /online /enable-feature`
-  çalıştırır ve 3010 kodunu "yeniden başlatma gerekli" olarak raporlar.
+  çalıştırır ve 3010 kodunu "yeniden başlatma gerekli" olarak raporlar. `/LimitAccess` DISM'i
+  çevrimdışı tutar; eksik kaynak `0x800F081F` ile sessiz indirme yerine açıklama döndürür.
 - **Onarımlar:** AutoLogon, Ağ sıfırlama (`netsh -c interface dump` yedeğinden sonra
   `netsh winsock reset` / `int ip reset`), NTP sunucusu (`w32tm … pool.ntp.org`), Sistem bozulma
   taraması (`chkdsk /scan` → `dism /restorehealth` → `sfc /scannow`), Windows Update sıfırlama
@@ -741,11 +834,57 @@ anlık yük, stepping) · Anakart & BIOS · Bellek (modül modül tip/hız/üret
 (gerçek VRAM, çözünürlük, sürücü) · Depolama (diskler + sürücü doluluğu) · İşletim sistemi (build,
 çalışma süresi) · Ağ · Diğer.
 
-**Kopyala** ve **TXT Kaydet** ile raporu dışa aktarabilirsiniz.
+**Kopyala** ve **TXT Kaydet** önce önizleme açar: tam metin gösterilir ve bilgisayar adı,
+Kullanıcı adı, profil yolu, seri numaraları, IP/MAC gibi kimlikler uygulamadan çıkmadan maskelenebilir.
+Rapor hiçbir yere yüklenmez.
+
+İlk okumadan sonra **Son okumadan bu yana değişenler** kartı güncel envanteri öncekiyle karşılaştırır:
+değişen değerler, eklenen/kaybolan öğeler ve "bu kez veri yok" — okunamayan değeri eşleşmiş gibi
+göstermez.
+
+<a id="tr-tanilama"></a>
+
+### 7. Tanılama
+
+Salt okunur kontroller. Hiçbir dosya silinmez, hiçbir ayar değiştirilmez.
+
+- **Sistem özeti** — Windows sürümü/derlemesi, çalışma süresi, sistem sürücüsündeki boş alan ve
+  uygulamanın yönetici olup olmadığı.
+- **Bu dosyayı ne kullanıyor?** — dosya veya klasör için Restart Manager sorgusu; kilitleyen süreci
+  adlandırır. "Uygulama yok" gerçek bir sonuçtur, hata değildir.
+- **Hata kodu çözümleyici** — ondalık, hex veya HRESULT kodunu Win32/MSI anlamına çevirir.
+- **Pil ve uyku** — `powercfg` pil raporu: tasarım kapasitesi, bildirilen tam şarj, sağlık oranı ve
+  döngü sayısı. Eksik değerler sıfıra dönüşmez, eksik kalır.
+- **Ekran bağlantıları** — etkin ekran yollarını ölçer; kablo, port veya adaptör değişiminden sonra
+  ikinci ölçümle karşılaştırır.
+- **Windows hangi yolu kullanıyor?** — bir IP için Windows'un seçtiği yerel rotayı gösterir; hedefin
+  yanıt verip vermediğini test etmez.
+- **Bakım zaman çizelgesi** — olay günlüğünden son kurulum, güncelleme, çökme ve bakım olayları.
+
+Kartlar boşken kapalıdır, yalnızca çalıştırdığınız araç için açılır. Giriş alanları etkin açık/koyu
+temayı izler; yerel metin kutusu ve kaydırma çubuğu dahil.
+
+<a id="tr-kurtarma"></a>
+
+### 8. Kurtarma
+
+**Tümünü başlat** belgelenmiş onarım sırasını çalıştırır:
+
+`DISM /Cleanup-Image /CheckHealth` → `/ScanHealth` → `/RestoreHealth` → `sfc /scannow` → `chkdsk C: /scan`
+
+Her adım canlı durum gösterir; günlük tam komutu içerir. İş bitince uyarı raporu her adımı altı
+sonuçtan biriyle listeler — **Temiz**, **Onarıldı**, **Sorun bulundu**, **Başarısız**, **Durduruldu**
+veya **Belirsiz** — önemli günlük satırı ve gerekiyorsa yeniden başlatma notuyla birlikte. Özet şeridi
+sayfada kalır; **Rapor** aynı metni yeniden açar.
+
+Windows, SFC veya DISM için güvenilir bir "N dosya onarıldı" sayısı vermez. Rapor sayı uydurmak
+yerine onarım yapan adımı adlandırır. `chkdsk` yalnızca `/scan` ile çalışır: diski onarmaz, zorla
+yeniden başlatmaz, `/f` veya `/r` kullanmaz. Kurtarma yönetici izni gerektirir ve 30–60 dakika
+sürebilir.
 
 <a id="tr-ayarlar"></a>
 
-### 7. Ayarlar
+### 9. Ayarlar
 
 - **Dil:** English (varsayılan) / Türkçe. Seçim anında tüm arayüze uygulanır.
 - **Görünüm:** Light / Dark. Koyu palet graphite Aero'dur; cam, gloss, tablolar ve kaydırma
@@ -775,7 +914,7 @@ anlık yük, stepping) · Anakart & BIOS · Bellek (modül modül tip/hız/üret
 
 - **C# 5 / WinForms, .NET Framework 4.8**, Windows ile gelen
   `C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe` ile derlenir. SDK, NuGet ve harici DLL yok.
-- **Tek EXE**, ~615 KB, `anycpu`, bağımlılık yok.
+- **Tek EXE**, ~720 KB, `anycpu`, bağımlılık yok.
 - **İki dil, iki tema:** İngilizce varsayılan + Türkçe; açık Aero + koyu graphite Aero.
   `src/Lang.cs` (çekirdek sözlük) ve özellik bazlı parçalar `LangUninstall`, `LangTweaks`,
   `LangTweaksUi`, `LangConfig`; tema `src/Theme.cs`, `src/AeroDark.cs`, `src/AppSettings.cs`.
@@ -838,10 +977,10 @@ Python yalnızca simge üretimi ve tweak verisi üreticisi için gerekir; uygula
 Portable sürüm paketi (EXE + README + LICENSE + NOTICE, zip):
 
 ```
-powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.1
+powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.2
 ```
 
-`MineManager-v0.9.1-portable.zip` dosyasını üretir; SHA-256 özetini ve doğrudan çalıştırılacak
+`MineManager-v0.9.2-portable.zip` dosyasını üretir; SHA-256 özetini ve doğrudan çalıştırılacak
 `gh release create` komutunu yazar. Her GitHub sürümüne bu zip eklenir.
 
 <a id="tr-veri"></a>
@@ -865,13 +1004,16 @@ uzak erişim) elle hazırlanmıştır çünkü WinUtil'daki karşılıkları ver
 
 ## Doğrulama
 
-- `build.bat` → **0 hata, 0 uyarı**; `dist\MineManager.exe` = 628.224 bayt (< 1 MB).
-- `tests/Smoke.cs` gerçek `MainForm`'u ekran dışında **112 kombinasyonda** çizer — 7 sayfa ×
-  4 genişlik (1100/940/620/320) × İngilizce/Türkçe × açık/koyu — ve PNG yazar; böylece düzen,
+- `build.bat` → **0 hata, 0 uyarı**; `dist\MineManager.exe` ≈ 720 KB (736.768 bayt, < 1 MB).
+- `tests/Smoke.cs` gerçek `MainForm`'u ekran dışında **180 kombinasyonda** çizer — 9 sayfa ×
+  5 genişlik (1600/1100/940/620/320) × İngilizce/Türkçe × açık/koyu — ve PNG yazar; böylece düzen,
   taşma, tema ve çeviri hataları uygulamayı tıklamadan görünür. `-main:MineManager.Smoke` ile
   derlenir; üretilen EXE'ye dahil değildir.
-- Çeviri denetimi: **520** farklı İngilizce anahtar, **9**'u bilinçli olarak çevrilmedi (Inno Setup,
-  NSIS, Windows Installer gibi ürün adları ve yalnızca ayırıcı içeren dizeler).
+- `tests/RecoveryReportTest.cs` kurtarma ayrıştırıcısını İngilizce ve Türkçe temiz, onarılmış,
+  sorunlu, başarısız, durdurulmuş ve belirsiz çıktılarla; ayrıca SFC UTF-16 ve DISM/CHKDSK OEM
+  çıktı kodlamalarıyla denetler.
+- Çeviri denetimi: **719** farklı İngilizce anahtar, **16**'sı bilinçli olarak çevrilmedi (yalnızca
+  biçim dizeleri ve Inno Setup, NSIS, Windows Installer gibi teknoloji adları).
 - Ayar motoru öz denetimi: katalog sayıları (18/22/25/2), boş başlık/betik yok, indirme belirteci yok,
   gerçek HKCU uygula → algıla → geri al turu, varsayılan yerine anlık görüntüden geri yükleme,
   başarısız adımdan sonra geri alma, toplu işte hata sonrası devam, iptalde öğeler arasında durma.
@@ -887,14 +1029,15 @@ uzak erişim) elle hazırlanmıştır çünkü WinUtil'daki karşılıkları ver
 src/            tüm kaynak
                 Theme, AeroDark, DarkMode, AppSettings, AeroLogo, AeroToggle,
                 AeroControls, AeroGrid, AeroDialogs, AeroScrollBar, Native, ProcRunner, Sift,
-                Lang + LangUninstall/LangTweaks/LangTweaksUi/LangConfig,
+                Lang + LangUninstall/LangTweaks/LangTweaksUi/LangConfig/LangDiag/LangRecovery,
                 Cleaner, FileTools, MemoryTools, Hardware, Uninstaller, LeftoverScanner,
-                TweakEngine, TweaksData, ConfigData, ConfigEngine,
+                TweakEngine, TweaksData, ConfigData, ConfigEngine, SystemFacts,
+                RecoveryReport, RecoveryTools,
                 MainForm, Program, pages/
 assets/         logo.png (kaynak), app.ico (16–256), logo64.png (gömülü başlık ikonu)
 tools/          make_icon.py (logo → ico/png), gen_winutil.py (WinUtil JSON → TweaksData.cs),
                 data/winutil-tweaks.json (alınan veri)
-tests/          Smoke.cs (ekran dışı UI kontrolü; dağıtılan EXE'ye dahil değil)
+tests/          Smoke.cs (ekran dışı UI kontrolü) ve RecoveryReportTest.cs (ayrıştırıcı kontrolü)
 docs/           KAYNAK-DEGERLENDIRME.md (BCU + WinUtil değerlendirmesi, güvenlik incelemesi, liste)
 design-system/  Aero tokenları (tokens.json → aero-tokens.css, açık + koyu), MASTER.md, screens/
 dist/           derlenmiş tek dosya (depoda tutulmaz; portable zip olarak yayınlanır)
@@ -929,6 +1072,12 @@ LICENSE/NOTICE  MIT lisansı ve üçüncü taraf atıfları
 - Over-the-shoulder UAC (başka hesabın bilgileriyle yükseltme) durumunda kullanıcı bazlı işlemler
   yükselten hesabın profiline uygulanır; bu durum tespit edilmez.
 - Dil/tema değişimi iş sürerken kilitlidir; seçimler sayfa yeniden kurulsa da `TweakSession` ile korunur.
+- Tanılama tamamen salt okunurdur: dosyaları, rotaları, olay kayıtlarını ve pil verisini okur; hiçbir
+  şeyi silmez veya değiştirmez.
+- Kurtarma sayfası yalnızca `chkdsk /scan` çalıştırır. Diski onarmaz, yeniden başlatmayı zorlamaz,
+  `chkdsk /f` veya `/r` kullanmaz. DISM ve SFC hasarlı bir sistemde 30–60 dakika sürebilir.
+- Windows, SFC veya DISM için güvenilir bir "N dosya onarıldı" sayısı vermez. Rapor onarım yapan
+  adımı adlandırır ve asla sayı uydurmaz.
 
 <a id="tr-lisans"></a>
 

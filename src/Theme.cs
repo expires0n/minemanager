@@ -527,6 +527,11 @@ namespace MineManager
                             new PointF(r.X + 4, r.Y + 5)
                         });
                         break;
+                    case "repair":
+                        g.DrawArc(pen, r.X + 2, r.Y + 2, r.Width - 4, r.Height - 4, 35, 285);
+                        g.DrawLine(pen, r.Right - 7, r.Y + 3, r.Right - 3, r.Y + 7);
+                        g.DrawLine(pen, r.Right - 3, r.Y + 7, r.Right - 8, r.Y + 8);
+                        break;
                     case "menu":
                         g.DrawLine(pen, cx - 4, cy - 3, cx + 4, cy - 3);
                         g.DrawLine(pen, cx - 4, cy, cx + 4, cy);

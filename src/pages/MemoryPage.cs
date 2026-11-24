@@ -10,7 +10,7 @@ namespace MineManager
     {
         private Label _lblPct, _lblPctSub;
         private AeroProgress _bar;
-        private Label _lblTotal, _lblAvail, _lblCommited, _lblInstalled;
+        private Label _lblTotal, _lblAvail, _lblCommited, _lblInstalled, _lblImpact;
         private AeroGridView _grid;
         private AeroConsole _log;
         private AeroButton _btnQuick, _btnDeep;
@@ -20,6 +20,10 @@ namespace MineManager
         private Timer _timer;
         private int _tick;
         private bool _busy;
+
+        // impact card: before → right after → 30 s after the clean
+        private MemResult _impactBefore, _impactAfter, _impactLate;
+        private int _lateCountdown = -1;
 
         public MemoryPage()
         {
@@ -73,7 +77,7 @@ namespace MineManager
             mem.Caption = L.T("Physical Memory");
             mem.CaptionHint = L.T("live");
             mem.Dock = DockStyle.Top;
-            mem.Height = 222;
+            mem.Height = 252;
             _left.Controls.Add(mem);
 
             _lblPct = Ui.Lbl("0 %", Theme.Big, Theme.Text);
@@ -128,6 +132,7 @@ namespace MineManager
                 _lblCommited.Width = Math.Max(80, mem.Width - 28);
                 _lblInstalled.Left = Math.Max(120, mem.Width - 190);
                 _lblInstalled.Width = Math.Max(60, mem.Width - _lblInstalled.Left - 14);
+                if (_lblImpact != null) _lblImpact.Width = Math.Max(80, mem.Width - 28);
             };
 
             Label note = Ui.Lbl(L.T("Deep clean empties the standby list;\nprograms may be slower on first use."),
@@ -135,9 +140,17 @@ namespace MineManager
             note.AutoSize = false;
             note.AutoEllipsis = true;
             note.UseMnemonic = false;
-            note.SetBounds(14, 186, 330, 30);
+            note.SetBounds(14, 186, 330, 28);
             note.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             mem.Controls.Add(note);
+
+            _lblImpact = Ui.Lbl(L.T("No clean has run yet."), Aero.Small, Theme.Text);
+            _lblImpact.AutoSize = false;
+            _lblImpact.AutoEllipsis = true;
+            _lblImpact.UseMnemonic = false;
+            _lblImpact.SetBounds(14, 218, 330, 28);
+            _lblImpact.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            mem.Controls.Add(_lblImpact);
 
             // ---------------------------------------------------------- log card
             AeroCard logCard = new AeroCard();
@@ -237,6 +250,38 @@ namespace MineManager
             _tick++;
             RefreshNow();
             if (_tick % 4 == 0) RefreshProcesses();
+
+            // the 30-second measurement of the impact card
+            if (_lateCountdown > 0)
+            {
+                _lateCountdown--;
+                if (_lateCountdown == 0)
+                {
+                    _impactLate = MemoryTools.Status();
+                    UpdateImpact();
+                    Append(L.F("30 s later: available {0}", Fmt.Size(_impactLate.AvailPhys)));
+                }
+            }
+        }
+
+        /// <summary>
+        /// System-wide memory around a clean: before → right after → 30 s later.
+        /// The change is what the whole system shows, not a number owned by MineManager.
+        /// </summary>
+        private void UpdateImpact()
+        {
+            if (_lblImpact == null) return;
+            if (_impactBefore == null || _impactAfter == null)
+            {
+                _lblImpact.Text = L.T("No clean has run yet.");
+                return;
+            }
+            string text = L.F("Available: {0} → {1}",
+                Fmt.Size(_impactBefore.AvailPhys), Fmt.Size(_impactAfter.AvailPhys));
+            if (_impactLate != null)
+                text += L.F("  ·  after 30 s: {0}", Fmt.Size(_impactLate.AvailPhys));
+            text += "  (" + L.T("system-wide change") + ")";
+            _lblImpact.Text = text;
         }
 
         public void OnShown()
@@ -300,6 +345,11 @@ namespace MineManager
             _btnQuick.Enabled = false;
             _btnDeep.Enabled = false;
             MemResult before = MemoryTools.Status();
+            _impactBefore = before;
+            _impactAfter = null;
+            _impactLate = null;
+            _lateCountdown = -1;
+            UpdateImpact();
             Append(deep ? L.F("Deep clean started · available {0}", Fmt.Size(before.AvailPhys))
                 : L.F("Quick free started · available {0}", Fmt.Size(before.AvailPhys)));
 
@@ -318,11 +368,13 @@ namespace MineManager
                     SafeLog(L.F("{0} process working sets were emptied", n));
                     System.Threading.Thread.Sleep(300);
                     MemResult after = MemoryTools.Status();
+                    _impactAfter = after;
                     long gain = after.AvailPhys - before.AvailPhys;
                     SafeLog(L.F("Available memory: {0}  ({1})", Fmt.Size(after.AvailPhys),
                         (gain >= 0 ? "+" : "") + Fmt.Size(gain)));
                     if (after.LoadPercent < before.LoadPercent)
                         SafeLog(L.F("Memory usage {0} → {1}", L.Percent(before.LoadPercent), L.Percent(after.LoadPercent)));
+                    SafeLog(L.T("The change is system-wide; it is not all freed by MineManager."));
                 }
                 catch (Exception ex)
                 {
@@ -338,6 +390,8 @@ namespace MineManager
                                 _busy = false;
                                 _btnQuick.Enabled = true;
                                 _btnDeep.Enabled = true;
+                                _lateCountdown = 30;
+                                UpdateImpact();
                                 RefreshNow();
                                 RefreshProcesses();
                                 Shell.Toast(L.T(deep ? "Deep clean completed" : "Memory freed"),

@@ -1,8 +1,9 @@
 # MineManager — portable build
 
 **MineManager is in public beta.** It is a single-EXE, install-free Windows system tool:
-cleanup, RAM tools, a bulk uninstaller, WinUtil-style tweaks and config actions, and a
-CPU-Z-style hardware report — all in one Aero-themed window.
+cleanup, RAM tools, a bulk uninstaller, WinUtil-style tweaks and config actions, a CPU-Z-style
+hardware report, read-only diagnostics and a guided recovery sequence — all in one Aero-themed
+window.
 
 > Beta: pages, tweak/config catalogues and languages keep growing, and behaviour or on-disk
 > formats can still change between beta releases. Read the confirmation dialogs and back up what
@@ -25,7 +26,7 @@ Verify the download with `SHA256SUMS.txt` (also shown as the asset digest on Git
 - Windows 10 or 11 (x64 or x86). The Aero theme also renders on Windows 7, where only
   registry-based features are meaningful.
 - .NET Framework 4.8 (in-box on Windows 10/11).
-- Administrator rights for cleanup, uninstall, tweak, DISM and feature actions.
+- Administrator rights for cleanup, uninstall, tweak, DISM, feature and recovery actions.
 
 ## Links
 
@@ -45,7 +46,8 @@ concepts and data are credited in [NOTICE](https://github.com/expires0n/minemana
 
 **MineManager herkese açık beta aşamasındadır.** Tek EXE olarak çalışan, kurulum gerektirmeyen bir
 Windows sistem aracı: temizlik, RAM araçları, toplu kaldırıcı, WinUtil tarzı ince ayarlar ve
-yapılandırma, CPU-Z tarzı donanım raporu — tek Aero penceresinde.
+yapılandırma, CPU-Z tarzı donanım raporu, salt okunur tanılama ve yönlendirilmiş kurtarma — tek
+Aero penceresinde.
 
 **Kurulum:** `MineManager-<sürüm>-portable.zip` dosyasını indirip istediğiniz yere açın,
 `MineManager.exe` dosyasını çalıştırıp UAC onayını verin. Kurulum, hizmet ve çalışma anında indirme

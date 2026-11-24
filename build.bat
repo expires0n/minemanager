@@ -31,6 +31,7 @@ if not exist "dist" mkdir "dist"
  /r:System.Drawing.dll ^
  /r:System.Windows.Forms.dll ^
  /r:System.Management.dll ^
+ /r:System.Xml.dll ^
  /recurse:"src\*.cs"
 
 if errorlevel 1 (

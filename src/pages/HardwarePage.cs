@@ -114,31 +114,61 @@ namespace MineManager
                     SafeStatus(L.F("Error: {0}", ex.Message));
                 }
                 List<SpecSection> d = data ?? new List<SpecSection>();
+                List<string> diff = HwSnapshot.Compare(d);
+                bool hadPrevious = HwSnapshot.HasPrevious;
+                HwSnapshot.Save(d);
                 SafeInvoke(delegate
                 {
                     _data = d;
-                    BuildCards(d);
+                    BuildCards(d, diff, hadPrevious);
                     _busy = false;
                     _loaded = true;
                     _btnReload.Enabled = true;
-                    SetStatus(L.F("{0} sections read · {1}", d.Count, DateTime.Now.ToString("HH:mm:ss", L.Culture)));
+                    SetStatus(L.F("{0} sections read · {1}", d.Count, DateTime.Now.ToString("HH:mm:ss", L.Culture)) +
+                        (diff.Count > 0 ? L.F(" · {0} changes since the last reading",
+                            L.Count(diff.Count, "change", "changes", "değişiklik")) : ""));
                 });
             });
         }
 
-        private void BuildCards(List<SpecSection> data)
+        private void BuildCards(List<SpecSection> data, List<string> diff, bool hadPrevious)
         {
+            List<SpecSection> all = new List<SpecSection>();
+            if (hadPrevious)
+            {
+                SpecSection change = new SpecSection(L.T("Changes since the last reading"));
+                if (diff.Count == 0)
+                    change.Rows.Add(new SpecRow(L.T("No change since the last reading."), " "));
+                else
+                    for (int i = 0; i < diff.Count; i++) change.Rows.Add(new SpecRow(diff[i], " "));
+                all.Add(change);
+            }
+            for (int i = 0; i < data.Count; i++) all.Add(data[i]);
+
             _scroll.SuspendLayout();
             _cards.Clear();
-            for (int i = 0; i < data.Count; i++)
+            for (int i = 0; i < all.Count; i++)
             {
-                SpecSection sec = data[i];
+                SpecSection sec = all[i];
+                bool wide = hadPrevious && i == 0;   // the diff card reads as full-width lines
                 AeroCard c = new AeroCard();
                 c.Caption = sec.Title;
                 c.CaptionHint = L.F("{0} items", sec.Rows.Count);
                 int y = 30;
                 for (int r = 0; r < sec.Rows.Count; r++)
                 {
+                    if (wide)
+                    {
+                        Label line = Ui.Lbl(sec.Rows[r].Name, Aero.Body, Theme.Text);
+                        line.AutoSize = false;
+                        line.AutoEllipsis = true;
+                        line.Tag = "w";
+                        line.SetBounds(10, y, 600, 20);
+                        c.Controls.Add(line);
+                        _tip.SetToolTip(line, sec.Rows[r].Name);
+                        y += Aero.RowH;
+                        continue;
+                    }
                     Label n = Ui.Lbl(sec.Rows[r].Name, Aero.Body, Theme.Dim);
                     n.AutoSize = false;
                     n.AutoEllipsis = true;
@@ -203,6 +233,12 @@ namespace MineManager
                         name = (Label)ctl;
                         continue;
                     }
+                    if (tag == "w")
+                    {
+                        ctl.SetBounds(10, 30 + row * rowH, Math.Max(60, w - 20), 20);
+                        row++;
+                        continue;
+                    }
                     if (tag != "v") continue;
                     int ry = 30 + row * rowH;
                     if (stack)
@@ -251,9 +287,12 @@ namespace MineManager
         private void CopyReport()
         {
             if (_data.Count == 0) return;
+            Privacy.Choice choice = Privacy.ShowShareDialog(FindForm(),
+                L.T("Share the hardware report"), Hardware.ToText(_data));
+            if (!choice.Ok) return;
             try
             {
-                Clipboard.SetText(Hardware.ToText(_data));
+                Clipboard.SetText(choice.Text);
                 SetStatus(L.T("Report copied to clipboard."));
                 Shell.Toast(L.T("Hardware report copied to clipboard"), Aero.Success);
             }
@@ -263,14 +302,17 @@ namespace MineManager
         private void SaveReport()
         {
             if (_data.Count == 0) return;
+            Privacy.Choice choice = Privacy.ShowShareDialog(FindForm(),
+                L.T("Share the hardware report"), Hardware.ToText(_data));
+            if (!choice.Ok) return;
             using (SaveFileDialog dlg = new SaveFileDialog())
             {
                 dlg.Filter = L.T("Text file|*.txt");
-                dlg.FileName = L.T("hardware-report") + "-" + Environment.MachineName + ".txt";
+                dlg.FileName = L.T("hardware-report") + ".txt";
                 if (dlg.ShowDialog(this) != DialogResult.OK) return;
                 try
                 {
-                    File.WriteAllText(dlg.FileName, Hardware.ToText(_data), new UTF8Encoding(true));
+                    File.WriteAllText(dlg.FileName, choice.Text, new UTF8Encoding(true));
                     SetStatus(L.F("Saved: {0}", dlg.FileName));
                     Shell.Toast(L.T("Report saved"), Aero.Success);
                 }

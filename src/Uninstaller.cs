@@ -251,6 +251,60 @@ namespace MineManager
             }
             catch { ok = false; }
         }
+
+        /// <summary>
+        /// Removes ONE directory entry from the PATH value and keeps every other entry,
+        /// its order, its %VAR% text and its value kind. The old value is already inside
+        /// the .reg backup of this key, so the change can be restored.
+        /// </summary>
+        public static void RemovePathEntry(string fullPath, string entry, out bool ok)
+        {
+            ok = false;
+            try
+            {
+                using (RegistryKey k = Open(fullPath, true))
+                {
+                    if (k == null) return;
+                    object raw = k.GetValue("Path");
+                    if (raw == null) return;
+                    RegistryValueKind kind = RegistryValueKind.String;
+                    try { kind = k.GetValueKind("Path"); } catch { }
+
+                    string target = (entry ?? "").Trim().TrimEnd('\\');
+                    List<string> keep = new List<string>();
+                    if (raw is string[])
+                    {
+                        string[] parts = (string[])raw;
+                        for (int i = 0; i < parts.Length; i++)
+                            if (!Same(parts[i], target)) keep.Add(parts[i]);
+                        if (keep.Count == parts.Length) return;
+                        k.SetValue("Path", keep.ToArray(), kind);
+                    }
+                    else
+                    {
+                        string[] parts = raw.ToString().Split(';');
+                        bool changed = false;
+                        for (int i = 0; i < parts.Length; i++)
+                        {
+                            if (Same(parts[i], target)) { changed = true; continue; }
+                            keep.Add(parts[i]);
+                        }
+                        if (!changed) return;
+                        string joined = string.Join(";", keep.ToArray());
+                        k.SetValue("Path", joined, kind);
+                    }
+                    ok = true;
+                }
+            }
+            catch { ok = false; }
+        }
+
+        private static bool Same(string a, string b)
+        {
+            if (a == null || b == null) return false;
+            return string.Equals(a.Trim().TrimEnd('\\'), b.Trim().TrimEnd('\\'),
+                StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     internal static class UninstallerCatalog
@@ -1038,6 +1092,7 @@ namespace MineManager
         private readonly CancelFlag _cancel = new CancelFlag();
         private Thread _thread;
         private volatile bool _reboot;
+        private volatile bool _stop;
 
         public UninstallQueue(IList<InstalledProgram> items, bool quiet)
         {
@@ -1112,9 +1167,19 @@ namespace MineManager
                         : L.T("Waiting for the uninstaller to finish..."));
 
                     string status;
-                    bool ok = RunOne(p, useQuiet, out status);
+                    Action<string> report = delegate(string s) { Report(i, p, s); };
+                    bool ok = RunOne(p, useQuiet, report, out status);
                     if (status.Length == 0) status = ok ? L.T("Uninstalled.") : L.T("Failed.");
                     Report(i, p, status);
+
+                    // 1641: the installer itself started a restart. Running the next
+                    // uninstaller on a half-rebooted machine is worse than stopping here.
+                    if (_stop)
+                    {
+                        for (int j = i + 1; j < _items.Count; j++)
+                            Report(j, _items[j], L.T("Waiting (the queue stopped after a restart was started)."));
+                        break;
+                    }
                 }
             }
             catch { }
@@ -1135,7 +1200,7 @@ namespace MineManager
             catch { return false; }
         }
 
-        private bool RunOne(InstalledProgram p, bool quiet, out string status)
+        private bool RunOne(InstalledProgram p, bool quiet, Action<string> report, out string status)
         {
             status = "";
 
@@ -1148,10 +1213,13 @@ namespace MineManager
                 string qexe = UninstallerCatalog.SplitCommand(cmd, out qargs);
                 if (qexe.Length > 0)
                 {
+                    bool msi = IsMsiExecutable(qexe);
                     // msiexec is transactional: a kill leaves a half-applied package, so it
                     // gets no deadline. NSIS/Inno uninstallers are killed after 10 minutes.
-                    int timeout = IsMsiExecutable(qexe) ? -1 : QuietTimeoutSec;
-                    RunResult r = ProcRunner.Run(qexe, qargs, timeout, null, null);
+                    int timeout = msi ? -1 : QuietTimeoutSec;
+                    RunResult r = msi
+                        ? RunMsiWithBusyRetry(qexe, qargs, timeout, report)
+                        : ProcRunner.Run(qexe, qargs, timeout, null, null);
                     if (r.TimedOut)
                     {
                         status = L.T("Timed out after 10 minutes; the process tree was closed.");
@@ -1174,7 +1242,7 @@ namespace MineManager
                         status = L.T("The uninstaller could not be started.");
                         return false;
                     }
-                    return ClassifyExit(r.ExitCode, out status);
+                    return ClassifyExit(r.ExitCode, msi, out status);
                 }
             }
 
@@ -1186,6 +1254,7 @@ namespace MineManager
                 return false;
             }
 
+            bool interactiveMsi = IsMsiExecutable(exe);
             int code = StartInteractive(exe, args, out status);
             if (code == -2) return false;   // start error, status already set
 
@@ -1199,7 +1268,34 @@ namespace MineManager
                 status = L.T("The uninstaller finished but the registry entry is still present.");
                 return false;
             }
-            return ClassifyExit(code, out status);
+            return ClassifyExit(code, interactiveMsi || p.WindowsInstaller, out status);
+        }
+
+        /// <summary>
+        /// MSI 1618 = another Windows Installer transaction is running. Policy: wait
+        /// 15, 30, 60, 60 seconds and retry the SAME item, at most 5 calls in total.
+        /// Another msiexec process is never killed.
+        /// </summary>
+        private RunResult RunMsiWithBusyRetry(string exe, string args, int timeout, Action<string> report)
+        {
+            int[] waits = new int[] { 15, 30, 60, 60 };
+            RunResult r = ProcRunner.Run(exe, args, timeout, null, null);
+            for (int attempt = 0; attempt < waits.Length; attempt++)
+            {
+                if (!WinErr.MsiBusy(r.ExitCode) || r.Cancelled || r.TimedOut) return r;
+                if (report != null)
+                    report(L.F("Another installation is in progress — waiting {0}s (retry {1}/4)...",
+                        waits[attempt], attempt + 1));
+                int left = waits[attempt];
+                while (left > 0 && !_cancel.Cancelled)
+                {
+                    Thread.Sleep(1000);
+                    left--;
+                }
+                if (_cancel.Cancelled) return r;
+                r = ProcRunner.Run(exe, args, timeout, null, null);
+            }
+            return r;
         }
 
         /// <summary>NSIS and Inno exit codes are unreliable (they re-spawn from %TEMP%).</summary>
@@ -1248,7 +1344,11 @@ namespace MineManager
             }
         }
 
-        private bool ClassifyExit(int code, out string status)
+        /// <summary>
+        /// Exit-code semantics. MSI codes are only trusted when the run really went
+        /// through msiexec — a vendor EXE defines its own exit codes.
+        /// </summary>
+        private bool ClassifyExit(int code, bool msi, out string status)
         {
             status = "";
             if (code == 0) { status = L.T("Uninstalled."); return true; }
@@ -1257,6 +1357,7 @@ namespace MineManager
             if (code == 1641 || code == 3010)
             {
                 _reboot = true;
+                if (code == 1641) _stop = true;   // a restart was already started
                 status = L.T("Uninstalled. A restart is required.");
                 return true;
             }
@@ -1265,7 +1366,20 @@ namespace MineManager
                 status = L.T("Another installation is in progress. Try again later.");
                 return false;
             }
-            status = L.F("Failed (exit code {0}).", code);
+            if (msi)
+            {
+                // 1603, 1612, 1619, 1620, 1625, 1638, 1639 … — say what MSI meant.
+                string m = WinErr.MsiMeaning(code);
+                if (m.Length > 0)
+                {
+                    status = L.F("Exit code {0} · {1}", code, m);
+                    return false;
+                }
+            }
+            string win = WinErr.Win32Message(code);
+            status = win.Length > 0
+                ? L.F("Exit code {0} · {1}", code, win)
+                : L.F("Failed (exit code {0}).", code);
             return false;
         }
     }

@@ -46,6 +46,21 @@ namespace MineManager
 
         private static void Walk(Control c, bool dark)
         {
+            // Plain WinForms text boxes are painted by the OS theme, not by Aero.
+            // Explicit colors alone are ignored while the global dark app mode is
+            // active (light text on a white field after switching back to light),
+            // so opt the control out of native theming as well.
+            TextBox tb = c as TextBox;
+            if (tb != null)
+            {
+                try
+                {
+                    tb.BackColor = Aero.Field;
+                    tb.ForeColor = Aero.Ink;
+                    SetWindowTheme(tb.Handle, "", "");
+                }
+                catch { }
+            }
             if (c is ScrollBar)
             {
                 try

@@ -687,6 +687,8 @@ namespace MineManager
             public string Type = "DWord";
             public string Value = "";
             public bool Existed;
+            /// <summary>Value MineManager wrote when it applied the tweak (conflict check).</summary>
+            public string Written = "";
         }
 
         private static List<SnapRec> _snapshot;
@@ -717,6 +719,11 @@ namespace MineManager
                         rec.Type = parts[4];
                         try { rec.Value = Encoding.UTF8.GetString(Convert.FromBase64String(parts[5])); }
                         catch { rec.Value = ""; }
+                        if (parts.Length >= 7)
+                        {
+                            try { rec.Written = Encoding.UTF8.GetString(Convert.FromBase64String(parts[6])); }
+                            catch { rec.Written = ""; }
+                        }
                         if (!IsKnownTarget(rec.Id, rec.Path, rec.Name, rec.Type)) continue;
                         if (rec.Value.Length > 8192) continue;
                         _snapshot.Add(rec);
@@ -872,7 +879,7 @@ namespace MineManager
             }
         }
 
-        /// <summary>TSV: id, path, name, existed, type, base64 value. Written whole and closed.</summary>
+        /// <summary>TSV: id, path, name, existed, type, base64 value, base64 written. Written whole and closed.</summary>
         private static void SaveSnapshotFile(List<SnapRec> all, string file)
         {
             if (all.Count == 0)
@@ -882,7 +889,7 @@ namespace MineManager
                 return;
             }
             StringBuilder sb = new StringBuilder();
-            sb.Append("# MineManager undo snapshot v1 - id, path, name, existed, type, base64 value");
+            sb.Append("# MineManager undo snapshot v2 - id, path, name, existed, type, base64 value, base64 written");
             sb.Append(Environment.NewLine);
             for (int i = 0; i < all.Count; i++)
             {
@@ -893,6 +900,8 @@ namespace MineManager
                 sb.Append(rec.Existed ? "1" : "0").Append('\t');
                 sb.Append(rec.Type).Append('\t');
                 sb.Append(Convert.ToBase64String(Encoding.UTF8.GetBytes(rec.Value ?? "")));
+                sb.Append('\t');
+                sb.Append(Convert.ToBase64String(Encoding.UTF8.GetBytes(rec.Written ?? "")));
                 sb.Append(Environment.NewLine);
             }
             File.WriteAllText(file, sb.ToString(), new UTF8Encoding(false));
@@ -920,6 +929,62 @@ namespace MineManager
             if (rec != null) return rec.Existed ? (rec.Value == null ? "" : rec.Value) : Tweak.RemoveEntry;
             if (string.IsNullOrEmpty(op.Original)) return Tweak.RemoveEntry;
             return op.Original;
+        }
+
+        /// <summary>
+        /// After a verified apply, remember the value MineManager wrote for every target.
+        /// Undo compares against this and never overwrites a value that changed since.
+        /// </summary>
+        private static void RecordWritten(Tweak t, Action<string> log)
+        {
+            string file = SnapshotPath;
+            if (file.Length == 0) return;
+            try
+            {
+                List<SnapRec> all = SnapshotRecords();
+                lock (_snapshotGate)
+                {
+                    bool changed = false;
+                    for (int i = 0; i < all.Count; i++)
+                    {
+                        SnapRec rec = all[i];
+                        if (!string.Equals(rec.Id, t.Id, StringComparison.Ordinal)) continue;
+                        bool existed;
+                        RegistryValueKind kind;
+                        string text;
+                        CaptureValue(rec.Path, rec.Name, out existed, out kind, out text);
+                        string written = existed ? (text ?? "") : Tweak.RemoveEntry;
+                        if (string.Equals(rec.Written, written, StringComparison.Ordinal)) continue;
+                        rec.Written = written;
+                        changed = true;
+                    }
+                    if (changed) SaveSnapshotFile(all, file);
+                }
+            }
+            catch (Exception ex)
+            {
+                Say(log, L.F("The undo snapshot could not be updated: {0}", ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Conflict-checked undo: when the value no longer equals what MineManager wrote,
+        /// the user (Windows, another tool) changed it in between — that newer value is
+        /// not ours to overwrite. The step is skipped and reported instead.
+        /// </summary>
+        private static string ConflictNote(string id, string path, string name)
+        {
+            SnapRec rec = FindSnapshot(id, path, name);
+            if (rec == null || string.IsNullOrEmpty(rec.Written)) return "";
+            bool existed;
+            RegistryValueKind kind;
+            string current;
+            CaptureValue(path, name, out existed, out kind, out current);
+            string now = existed ? (current ?? "") : Tweak.RemoveEntry;
+            if (string.Equals((now ?? "").Trim(), (rec.Written ?? "").Trim(), StringComparison.Ordinal))
+                return "";
+            return L.F("SKIPPED {0} - it changed after MineManager applied it (now: {1}, MineManager wrote: {2}). Left as it is.",
+                Display(path, name), OneLine(now), OneLine(rec.Written));
         }
 
         private static string UndoType(Tweak t, RegOp op)
@@ -1027,6 +1092,7 @@ namespace MineManager
                 if (!undo && hasState) WriteSnapshot(t, log);
 
                 List<UndoStep> trail = new List<UndoStep>();
+                int conflicts = 0;
 
                 // 1. registry
                 RegOp[] reg = t.Registry ?? new RegOp[0];
@@ -1041,6 +1107,16 @@ namespace MineManager
                     }
                     string want = undo ? UndoValue(t, reg[i]) : reg[i].Value;
                     string type = undo ? UndoType(t, reg[i]) : reg[i].Type;
+                    if (undo)
+                    {
+                        string note = ConflictNote(t.Id, reg[i].Path, reg[i].Name);
+                        if (note.Length > 0)
+                        {
+                            conflicts++;
+                            Say(log, note);
+                            continue;
+                        }
+                    }
                     if (!WriteValueAt(reg[i].Path, reg[i].Name, want, type, trail, log))
                     {
                         Rollback(trail, log);
@@ -1060,6 +1136,16 @@ namespace MineManager
                         return false;
                     }
                     string want = undo ? UndoStartup(t, svc[i]) : svc[i].Startup;
+                    if (undo)
+                    {
+                        string note = ConflictNote(t.Id, ServicePath(svc[i].Name), "Start");
+                        if (note.Length > 0)
+                        {
+                            conflicts++;
+                            Say(log, note);
+                            continue;
+                        }
+                    }
                     if (!ApplyService(svc[i], want, trail, log))
                     {
                         Rollback(trail, log);
@@ -1118,11 +1204,18 @@ namespace MineManager
                     bool reached = undo ? state != TweakState.Applied : state == TweakState.Applied;
                     if (!reached)
                     {
-                        Say(log, L.F("Verification failed - detected state is {0}.", StateName(state)));
-                        return false;
+                        if (conflicts > 0)
+                            Say(log, L.F("Verification differs because {0} step(s) were skipped (changed by something else).",
+                                conflicts));
+                        else
+                        {
+                            Say(log, L.F("Verification failed - detected state is {0}.", StateName(state)));
+                            return false;
+                        }
                     }
                 }
 
+                if (!undo && hasState) RecordWritten(t, log);
                 if (undo && hasState) ForgetSnapshot(t.Id, log);
                 if (t.NeedsRestart)
                     Say(log, L.T("A restart is required to finish this tweak."));

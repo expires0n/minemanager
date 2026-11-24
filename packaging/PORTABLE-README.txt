@@ -5,7 +5,7 @@ This folder is the complete application. There is nothing to install.
 
 1. Run MineManager.exe
 2. Accept the Windows UAC prompt (the app needs administrator rights for cleanup,
-   uninstaller, tweak and feature actions).
+   uninstaller, tweak, feature and recovery actions).
 3. Pick a page in the left navigation.
 4. Optional: Settings -> Language -> Turkce, Settings -> Appearance -> Dark.
 

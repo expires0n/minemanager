@@ -18,6 +18,8 @@ namespace MineManager
         public int Errors;
         public bool Measured;
         public string Status = "";
+        /// <summary>UTC time of the scan; files that changed after it are not deleted.</summary>
+        public DateTime ScannedAtUtc = DateTime.MinValue;
 
         public CleanTarget(string name, string note)
         {
@@ -199,6 +201,7 @@ namespace MineManager
         {
             long size = 0;
             int files = 0;
+            t.ScannedAtUtc = DateTime.UtcNow;
 
             if (t.IsRecycleBin)
             {
@@ -233,6 +236,7 @@ namespace MineManager
         {
             long freed = 0;
             int errors = 0;
+            int skipped = 0;
 
             try
             {
@@ -248,15 +252,18 @@ namespace MineManager
                 {
                     for (int i = 0; i < t.Folders.Count; i++)
                     {
-                        int d, e;
-                        freed += FileTools.EmptyFolder(t.Folders[i], out d, out e);
+                        int d, e, s;
+                        freed += FileTools.EmptyFolder(t.Folders[i], t.ScannedAtUtc, out d, out e, out s);
                         errors += e;
+                        skipped += s;
                     }
                     for (int i = 0; i < t.Patterns.Count; i++)
                     {
-                        int e;
-                        freed += FileTools.DeletePattern(t.Patterns[i][0], t.Patterns[i][1], out e);
+                        int e, s;
+                        freed += FileTools.DeletePattern(t.Patterns[i][0], t.Patterns[i][1],
+                            t.ScannedAtUtc, out e, out s);
                         errors += e;
+                        skipped += s;
                     }
                 }
             }
@@ -264,9 +271,13 @@ namespace MineManager
 
             t.Errors = errors;
             Measure(t);
-            t.Status = errors > 0
-                ? L.F("Partially deleted ({0} items in use)", errors)
-                : (freed > 0 ? L.T("Cleaned") : L.T("Already clean"));
+            if (skipped > 0)
+                t.Status = L.F("Cleaned · {0} files changed since the scan were left alone",
+                    L.Count(skipped, "file", "files", "dosya"));
+            else
+                t.Status = errors > 0
+                    ? L.F("Partially deleted ({0} items in use)", errors)
+                    : (freed > 0 ? L.T("Cleaned") : L.T("Already clean"));
             return freed;
         }
     }

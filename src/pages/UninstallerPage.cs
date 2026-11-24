@@ -14,7 +14,8 @@ namespace MineManager
         private AeroSearchBox _search;
         private AeroCheck _chkSystem, _chkQuiet;
         private AeroButton _btnRefresh, _btnRemove, _btnRemoveSel, _btnRemoveScan, _btnForce, _btnStop,
-            _btnDeleteLo, _btnSelectAll, _btnSelectNone, _btnScanLo, _btnDetails, _btnExport;
+            _btnDeleteLo, _btnSelectAll, _btnSelectNone, _btnScanLo, _btnDetails, _btnExport,
+            _btnBackups;
         private Label _lblCount, _lblLoHint;
         private AeroCard _loCard;
         private AeroCommandBar _cmd;
@@ -212,6 +213,12 @@ namespace MineManager
             _btnSelectNone.Click += delegate { SetAllLeftovers(false); };
             loBar.Controls.Add(_btnSelectNone);
 
+            _btnBackups = Ui.Outline(L.T("Clean backups"), 110);
+            _btnBackups.Location = new Point(270, 2);
+            _btnBackups.Click += delegate { CleanBackups(); };
+            loBar.Controls.Add(_btnBackups);
+            _tip.SetToolTip(_btnBackups, L.T("Delete MineManager's .reg backup packages"));
+
             _lblLoHint = Ui.Lbl(L.T("Select a program and use \"Remove + Scan\" to find leftovers."),
                 Aero.Small, Theme.Dim);
             _lblLoHint.AutoSize = false;
@@ -220,9 +227,9 @@ namespace MineManager
             loBar.Controls.Add(_lblLoHint);
             loBar.Resize += delegate
             {
-                bool show = loBar.Width >= 560;
+                bool show = loBar.Width >= 640;
                 _lblLoHint.Visible = show;
-                if (show) _lblLoHint.SetBounds(266, 4, Math.Max(80, loBar.Width - 270), 20);
+                if (show) _lblLoHint.SetBounds(386, 4, Math.Max(80, loBar.Width - 390), 20);
             };
 
             _loGrid = new AeroGridView();
@@ -966,7 +973,7 @@ namespace MineManager
             if (n == 0) return;
 
             if (!AeroDialog.Confirm(FindForm(), L.T("Delete leftovers"),
-                    L.F("{0} leftovers will be permanently deleted. Continue?", n),
+                    L.F("{0} leftovers will be permanently deleted. Registry keys and values are exported to .reg first. Continue?", n),
                     L.T("Delete"), L.T("Cancel"), "danger", true))
                 return;
 
@@ -978,8 +985,19 @@ namespace MineManager
                 int errors;
                 string backup = LeftoverScanner.BackupRegistry(items, null);
                 long freed = LeftoverScanner.Delete(items, null, out errors);
+
+                // anything still present is a real failure — usually a locked file
+                List<string> locked = new List<string>();
+                for (int i = 0; i < items.Count; i++)
+                {
+                    LeftoverItem it = items[i];
+                    if (!it.Checked) continue;
+                    if (LeftoverScanner.StillThere(it) && locked.Count < 4) locked.Add(it.Where);
+                }
+
                 long freedFinal = freed;
                 string backupName = backup != null ? Path.GetFileName(backup) : "";
+                List<string> lockedFinal = locked;
                 SafeInvoke(delegate
                 {
                     SetBusy(false);
@@ -1008,6 +1026,86 @@ namespace MineManager
                     UpdateLoButtons();
                     RefreshPrograms();
                     Shell.Toast(L.F("Deleted · {0} freed", Fmt.Size(freedFinal)), Aero.Success);
+
+                    if (lockedFinal.Count > 0) OfferLockReport(lockedFinal);
+                });
+            });
+        }
+
+        /// <summary>
+        /// "What is using this file?" for targets a delete could not remove: Restart
+        /// Manager names the holder so the user can close it and try again.
+        /// </summary>
+        private void OfferLockReport(List<string> paths)
+        {
+            if (paths == null || paths.Count == 0) return;
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < paths.Count; i++)
+            {
+                sb.Append(FileLock.Report(paths[i]));
+                sb.Append("\r\n\r\n");
+            }
+            ReportDialog.Show(FindForm(), L.T("What is using this file?"),
+                L.T("These items could not be deleted. Restart Manager reports who holds them."),
+                sb.ToString(), L.T("Close"), null, true);
+        }
+
+        /// <summary>
+        /// Deletes MineManager's own backup packages (.reg exports, task XML). This ends
+        /// restore through MineManager — exactly the "nothing is left behind" step, and
+        /// it is never automatic.
+        /// </summary>
+        private void CleanBackups()
+        {
+            if (_busy) return;
+            List<LeftoverScanner.BackupEntry> list = LeftoverScanner.ListBackups();
+            if (list.Count == 0)
+            {
+                AeroDialog.Info(FindForm(), L.T("Clean backups"), L.T("There are no backup packages."), "info");
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            long total = 0;
+            for (int i = 0; i < list.Count; i++)
+            {
+                total += list[i].Size;
+                if (i < 20)
+                {
+                    sb.Append(list[i].Name);
+                    sb.Append("   ");
+                    sb.Append(list[i].TimeText);
+                    sb.Append("   ");
+                    sb.Append(list[i].SizeText);
+                    sb.Append("   ");
+                    sb.Append(L.F("{0} files", list[i].Files));
+                    sb.Append("\r\n");
+                }
+            }
+            if (list.Count > 20) sb.Append(L.F("... and {0} more", list.Count - 20)).Append("\r\n");
+
+            string intro = L.F("{0} backup packages · {1} will be deleted permanently.",
+                L.Count(list.Count, "package", "packages", "paket"), Fmt.Size(total));
+            bool ok = ReportDialog.Show(FindForm(), L.T("Clean backups"),
+                intro + "\r\n" + L.T("Undo through MineManager ends for these packages. Registry keys cannot be restored from them anymore."),
+                sb.ToString(), L.T("Delete"), L.T("Cancel"), false);
+            if (!ok) return;
+
+            SetBusy(true);
+            SetStatus(L.T("Deleting backup packages..."));
+            List<string> names = new List<string>();
+            for (int i = 0; i < list.Count; i++) names.Add(list[i].Name);
+            Task.Run(delegate
+            {
+                int errors;
+                long freed = LeftoverScanner.PurgeBackups(names, out errors);
+                SafeInvoke(delegate
+                {
+                    SetBusy(false);
+                    string text = L.F("Deleted · {0} freed", Fmt.Size(freed)) +
+                        (errors > 0 ? L.F(" · {0} errors", errors) : "");
+                    SetStatus(text);
+                    Shell.Toast(text, Aero.Success);
                 });
             });
         }

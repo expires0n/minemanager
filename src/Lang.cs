@@ -94,6 +94,7 @@ namespace MineManager
             { "Done · {0} freed", "Tamamlandı · {0} boşaltıldı" },
             { "Cleanup complete · {0} freed", "Temizlik tamamlandı · {0} boşaltıldı" },
             { "Confirm cleanup", "Temizliği Onayla" },
+            { "About {0} of data will be deleted from {1} selected categories.\n\nContinue?", "Seçilen {1} kategoriden yaklaşık {0} veri silinecek.\n\nDevam edilsin mi?" },
             { "About {0} of data will be deleted from {1} selected categories. Continue?", "Seçilen {1} kategoriden yaklaşık {0} veri silinecek. Devam edilsin mi?" },
             { "User temporary files", "Kullanıcı Geçici Dosyaları" },
             { "Windows temporary files", "Windows Geçici Dosyaları" },
@@ -124,7 +125,7 @@ namespace MineManager
             { "Physical Memory", "Fiziksel Bellek" },
             { "live", "canlı" },
             { "in use", "kullanımda" },
-            { "Deep clean empties the standby list; programs may be slower on first use.", "Derin temizlik bekleme listesini boşaltır; programlar ilk kullanımda yavaşlayabilir." },
+            { "Deep clean empties the standby list;\nprograms may be slower on first use.", "Derin temizlik bekleme listesini boşaltır;\nprogramlar ilk kullanımda yavaşlayabilir." },
             { "Activity Log", "İşlem Günlüğü" },
             { "last 300 lines", "son 300 satır" },
             { "Processes Using Memory", "Bellek Kullanan İşlemler" },
@@ -302,6 +303,8 @@ namespace MineManager
             LangTweaks.Register(Tr);
             LangTweaksUi.Register(Tr);
             LangConfig.Register(Tr);
+            LangDiag.Register(Tr);
+            LangRecovery.Register(Tr);
         }
 
         public static bool IsTr { get { return Lang == "tr"; } }

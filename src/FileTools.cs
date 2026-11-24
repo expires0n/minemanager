@@ -108,10 +108,24 @@ namespace MineManager
         /// <summary>Deletes everything inside a folder. Keeps the folder itself.</summary>
         public static long EmptyFolder(string root, out int deleted, out int errors)
         {
+            int skipped;
+            return EmptyFolder(root, DateTime.MinValue, out deleted, out errors, out skipped);
+        }
+
+        /// <summary>
+        /// Deletes everything inside a folder, keeping the folder itself. Files that
+        /// changed after the scan (modified later than <paramref name="scannedAtUtc"/>)
+        /// are left alone: what was measured and approved is what gets deleted.
+        /// </summary>
+        public static long EmptyFolder(string root, DateTime scannedAtUtc, out int deleted,
+            out int errors, out int skipped)
+        {
             deleted = 0;
             errors = 0;
+            skipped = 0;
             long freed = 0;
             if (!Directory.Exists(root)) return 0;
+            bool checkTime = scannedAtUtc != DateTime.MinValue;
 
             List<string> dirs = new List<string>();
             Stack<string> stack = new Stack<string>();
@@ -135,6 +149,19 @@ namespace MineManager
                         string f = fs[i];
                         try
                         {
+                            if (checkTime)
+                            {
+                                try
+                                {
+                                    FileInfo fi = new FileInfo(f);
+                                    if (fi.LastWriteTimeUtc > scannedAtUtc)
+                                    {
+                                        skipped++;
+                                        continue;
+                                    }
+                                }
+                                catch { }
+                            }
                             long len = 0;
                             try { len = new FileInfo(f).Length; } catch { }
                             File.SetAttributes(f, FileAttributes.Normal);
@@ -220,8 +247,18 @@ namespace MineManager
 
         public static long DeletePattern(string dir, string pattern, out int errors)
         {
+            int skipped;
+            return DeletePattern(dir, pattern, DateTime.MinValue, out errors, out skipped);
+        }
+
+        /// <summary>Pattern delete with the same "changed since the scan" guard.</summary>
+        public static long DeletePattern(string dir, string pattern, DateTime scannedAtUtc,
+            out int errors, out int skipped)
+        {
             errors = 0;
+            skipped = 0;
             long freed = 0;
+            bool checkTime = scannedAtUtc != DateTime.MinValue;
             try
             {
                 if (!Directory.Exists(dir)) return 0;
@@ -230,7 +267,13 @@ namespace MineManager
                 {
                     try
                     {
-                        long len = new FileInfo(fs[i]).Length;
+                        FileInfo fi = new FileInfo(fs[i]);
+                        if (checkTime && fi.LastWriteTimeUtc > scannedAtUtc)
+                        {
+                            skipped++;
+                            continue;
+                        }
+                        long len = fi.Length;
                         File.SetAttributes(fs[i], FileAttributes.Normal);
                         File.Delete(fs[i]);
                         freed += len;

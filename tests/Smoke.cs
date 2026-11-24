@@ -26,7 +26,7 @@ namespace MineManager
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            int[] sizes = new int[] { 1100, 940, 620, 320 };
+            int[] sizes = new int[] { 1600, 1100, 940, 620, 320 };
             string[] langs = new string[] { "en", "tr" };
 
             foreach (string lang in langs)
@@ -43,7 +43,7 @@ namespace MineManager
                             f.ClientSize = new Size(w, w < 700 ? 620 : 720);
                             f.Show();
                             Application.DoEvents();
-                            for (int page = 0; page < 7; page++)
+                            for (int page = 0; page < 9; page++)
                             {
                                 try
                                 {
