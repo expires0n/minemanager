@@ -8,6 +8,14 @@ pre-release suffix (`-beta`, `-rc`) is published as a GitHub pre-release.
 > **MineManager is in public beta.** Every release is usable, but pages, catalogues and
 > translations are still growing. See [ROADMAP.md](ROADMAP.md) for what comes next.
 
+## [Unreleased]
+
+### Fixed
+
+- **Turkish translation** — the cleanup confirmation dialog ("About … of data will be deleted …")
+  and the deep clean note on the RAM page were shown in English in the Turkish UI. Their
+  translation keys did not match the line breaks in the source text. The English UI is unchanged.
+
 ## [0.9.1] — 2026-11-24
 
 First bugfix release, from the first user report. Reported by **Kyotor** — thanks for the
