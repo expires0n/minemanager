@@ -8,6 +8,22 @@ pre-release suffix (`-beta`, `-rc`) is published as a GitHub pre-release.
 > **MineManager is in public beta.** Every release is usable, but pages, catalogues and
 > translations are still growing. See [ROADMAP.md](ROADMAP.md) for what comes next.
 
+## [0.9.1] — 2026-11-24
+
+First bugfix release, from the first user report. Reported by **Kyotor** — thanks for the
+report and the detailed description.
+
+### Fixed
+
+- **Config page** — after a fix or feature job finished, every button on the page stayed
+  disabled and only Cancel remained visible (the busy state was restored instead of cleared).
+  The page is interactive again as soon as the job ends, and the job guard is now released
+  even if a step fails unexpectedly.
+- **Closing during a job** — the Windows tools a job started (chkdsk, sfc, DISM, …) are now
+  stopped together with the window instead of running invisibly in the background and breaking
+  later actions until the next reboot. The "Windows Update - Reset" service restore still
+  finishes while closing, so the update services are never left stopped.
+
 ## [0.9.0] — 2026-11-22
 
 First public beta. Single portable EXE, no installer, no runtime downloads.
@@ -43,4 +59,5 @@ First public beta. Single portable EXE, no installer, no runtime downloads.
 - Browser caches can only be removed while the browsers are closed.
 - Windows 7 runs the Aero theme, but only registry-based features are meaningful there.
 
+[0.9.1]: https://github.com/expires0n/minemanager/releases/tag/v0.9.1
 [0.9.0]: https://github.com/expires0n/minemanager/releases/tag/v0.9.0

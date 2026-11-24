@@ -3,7 +3,7 @@
 # because assets\app.ico and assets\logo64.png are committed.
 #
 #   powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1
-#   powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.0
+#   powershell -ExecutionPolicy Bypass -File packaging\make-portable.ps1 -Version v0.9.1
 #
 # The zip contains: MineManager.exe, README.md, LICENSE, NOTICE, PORTABLE-README.txt
 
