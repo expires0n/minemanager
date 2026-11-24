@@ -865,48 +865,61 @@ namespace MineManager
                 int bad = 0;
                 bool restart = false;
                 string lastError = "";
-                for (int i = 0; i < batch.Count; i++)
+                try
                 {
-                    if (flag.Cancelled) break;
-                    ConfigItem it = batch[i];
-                    string caption = L.T(it.Title);
-                    LogLine("— " + caption);
-                    string error;
-                    bool good = false;
-                    try { good = ConfigEngine.Run(it, LogLine, flag, out error); }
-                    catch (Exception ex)
+                    for (int i = 0; i < batch.Count; i++)
                     {
-                        error = ex.Message;
-                        good = false;
-                    }
-                    if (ConfigEngine.LastRunNeedsRestart) restart = true;
-                    if (good) ok++;
-                    else
-                    {
-                        bad++;
-                        if (!string.IsNullOrEmpty(error))
+                        if (flag.Cancelled) break;
+                        ConfigItem it = batch[i];
+                        string caption = L.T(it.Title);
+                        LogLine("— " + caption);
+                        string error;
+                        bool good = false;
+                        try { good = ConfigEngine.Run(it, LogLine, flag, out error); }
+                        catch (Exception ex)
                         {
-                            lastError = error;
-                            LogLine(error);
+                            error = ex.Message;
+                            good = false;
                         }
+                        if (ConfigEngine.LastRunNeedsRestart) restart = true;
+                        if (good) ok++;
+                        else
+                        {
+                            bad++;
+                            if (!string.IsNullOrEmpty(error))
+                            {
+                                lastError = error;
+                                LogLine(error);
+                            }
+                        }
+
+                        int done = i + 1;
+                        bool passed = good;
+                        string captionNow = caption;
+                        SafeUi(delegate
+                        {
+                            if (total > 1) Shell.SetProgress((double)done / total);
+                            SetStatus(passed ? L.F("Done: {0}", captionNow) : L.F("Failed: {0}", captionNow));
+                        });
                     }
-
-                    int done = i + 1;
-                    bool passed = good;
-                    string captionNow = caption;
-                    SafeUi(delegate
-                    {
-                        if (total > 1) Shell.SetProgress((double)done / total);
-                        SetStatus(passed ? L.F("Done: {0}", captionNow) : L.F("Failed: {0}", captionNow));
-                    });
                 }
-
-                ProcRunner.EndJob();
-                int okFinal = ok;
-                int badFinal = bad;
-                bool restartFinal = restart;
-                string errFinal = lastError;
-                SafeUi(delegate { FinishRun(okFinal, badFinal, errFinal, flag, restartFinal); });
+                catch (Exception ex)
+                {
+                    // Belt and braces: whatever happens, the job guard must be released
+                    // below, or every later action reports "a job is already running".
+                    bad++;
+                    lastError = ex.Message;
+                    LogLine(ex.Message);
+                }
+                finally
+                {
+                    ProcRunner.EndJob();
+                    int okFinal = ok;
+                    int badFinal = bad;
+                    bool restartFinal = restart;
+                    string errFinal = lastError;
+                    SafeUi(delegate { FinishRun(okFinal, badFinal, errFinal, flag, restartFinal); });
+                }
             });
         }
 
@@ -916,7 +929,9 @@ namespace MineManager
             _cancel = null;
             _realProgress = false;
             Shell.ClearProgress();
-            SetBusy(true);
+            // The job is over: the buttons must come back. Passing true here left the page
+            // in the busy state forever (every button disabled, only Cancel visible).
+            SetBusy(false);
 
             if (flag != null && flag.Cancelled)
             {

@@ -31,7 +31,7 @@ namespace MineManager
             { "Close", "Kapat" },
             { "Close anyway", "Yine de kapat" },
             { "A job is still running", "Bir işlem hâlâ çalışıyor" },
-            { "A background operation has not finished. Closing MineManager now stops the window, not the running Windows tool. Close anyway?", "Arka planda süren bir işlem var. MineManager'ı şimdi kapatmak yalnızca pencereyi kapatır, çalışan Windows aracını durdurmaz. Yine de kapatılsın mı?" },
+            { "A background operation has not finished. Closing MineManager now also stops the running Windows tool. Close anyway?", "Arka planda süren bir işlem var. MineManager'ı şimdi kapatmak çalışan Windows aracını da durdurur. Yine de kapatılsın mı?" },
             { "MineManager title bar", "MineManager başlık çubuğu" },
             { "{0} sections · portable · {1}", "{0} bölüm · portable · {1}" },
             { "administrator", "yönetici" },

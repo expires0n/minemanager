@@ -38,6 +38,34 @@ namespace MineManager
     internal static class ProcRunner
     {
         private static int _job;
+        private static volatile bool _shuttingDown;
+        private static readonly object _liveGate = new object();
+        private static readonly List<Process> _live = new List<Process>();
+
+        private static void Track(Process p)
+        {
+            if (p == null) return;
+            lock (_liveGate) _live.Add(p);
+        }
+
+        private static void Untrack(Process p)
+        {
+            if (p == null) return;
+            lock (_liveGate) _live.Remove(p);
+        }
+
+        /// <summary>
+        /// The window closed in the middle of a job: stop every child tool still running so
+        /// chkdsk, sfc or DISM cannot keep scanning invisibly in the background, and refuse
+        /// to start new ones (a handler would otherwise launch its next step after a kill).
+        /// </summary>
+        public static void Shutdown()
+        {
+            _shuttingDown = true;
+            List<Process> copy;
+            lock (_liveGate) { copy = new List<Process>(_live); _live.Clear(); }
+            for (int i = 0; i < copy.Count; i++) KillTree(copy[i]);
+        }
 
         public static bool IsElevated()
         {
@@ -77,7 +105,28 @@ namespace MineManager
 
         public static RunResult Run(string exe, string args, int timeoutSec, Action<string> onLine, CancelFlag cancel)
         {
+            return Run(exe, args, timeoutSec, onLine, cancel, false);
+        }
+
+        /// <summary>Runs even while the app is closing: restore steps must still finish.</summary>
+        public static RunResult RunUrgent(string exe, string args, int timeoutSec, Action<string> onLine,
+            CancelFlag cancel)
+        {
+            return Run(exe, args, timeoutSec, onLine, cancel, true);
+        }
+
+        private static RunResult Run(string exe, string args, int timeoutSec, Action<string> onLine,
+            CancelFlag cancel, bool urgent)
+        {
             RunResult r = new RunResult();
+            if (_shuttingDown && !urgent)
+            {
+                r.Cancelled = true;
+                r.ExitCode = -1;
+                r.Output = "MineManager is closing.";
+                return r;
+            }
+            Process started = null;
             try
             {
                 ProcessStartInfo psi = new ProcessStartInfo(exe, args ?? "");
@@ -105,6 +154,8 @@ namespace MineManager
                     p.OutputDataReceived += h;
                     p.ErrorDataReceived += h;
                     p.Start();
+                    started = p;
+                    Track(p);
                     p.BeginOutputReadLine();
                     p.BeginErrorReadLine();
 
@@ -128,6 +179,10 @@ namespace MineManager
                 r.ExitCode = -1;
                 r.Output = ex.Message;
                 if (onLine != null) { try { onLine(ex.Message); } catch { } }
+            }
+            finally
+            {
+                Untrack(started);
             }
             return r;
         }
@@ -175,7 +230,7 @@ namespace MineManager
             try
             {
                 if (p == null || p.HasExited) return;
-                Run(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "taskkill.exe"),
+                RunUrgent(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "taskkill.exe"),
                     "/PID " + p.Id + " /T /F", 15, null, null);
             }
             catch { }

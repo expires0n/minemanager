@@ -277,11 +277,15 @@ namespace MineManager
             FormClosing += delegate(object s, FormClosingEventArgs e)
             {
                 // A long job (uninstall queue, tweak batch, DISM) must not be orphaned by
-                // closing the window without a word.
+                // closing the window without a word. If the user closes anyway, the tools the
+                // job started are stopped with it — chkdsk, sfc or DISM left running invisibly
+                // keep the machine busy and break later actions until the next reboot.
                 if (!ProcRunner.Busy || e.CloseReason != CloseReason.UserClosing) return;
-                e.Cancel = !AeroDialog.Confirm(this, L.T("A job is still running"),
-                    L.T("A background operation has not finished. Closing MineManager now stops the window, not the running Windows tool. Close anyway?"),
+                bool close = AeroDialog.Confirm(this, L.T("A job is still running"),
+                    L.T("A background operation has not finished. Closing MineManager now also stops the running Windows tool. Close anyway?"),
                     L.T("Close anyway"), L.T("Cancel"), "warn", true);
+                if (close) ProcRunner.Shutdown();
+                e.Cancel = !close;
             };
         }
 

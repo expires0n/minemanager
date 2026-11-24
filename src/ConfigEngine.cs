@@ -432,10 +432,11 @@ namespace MineManager
             }
 
             // The services must come back up even when the rename or the cancel failed,
-            // otherwise Windows Update stays broken until the next reboot.
+            // otherwise Windows Update stays broken until the next reboot. RunUrgent so the
+            // restore still happens while the app is closing.
             Log(log, L.T("Starting Windows Update services..."));
             for (int i = 0; i < services.Length; i++)
-                ProcRunner.Run(Sys("net.exe"), "start " + services[i], t, log, null);
+                ProcRunner.RunUrgent(Sys("net.exe"), "start " + services[i], t, log, null);
 
             if (cancelled) { error = L.T("Cancelled."); return false; }
             if (!renamed)
