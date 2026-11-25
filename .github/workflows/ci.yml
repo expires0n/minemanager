@@ -1,0 +1,87 @@
+name: ci
+
+# Runs on every push and pull request to main: builds the EXE, checks the Turkish
+# translation keys, runs the recovery parser test and the off-screen UI smoke test.
+# The release workflow (release.yml) is unchanged and still runs only on v* tags.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      CSC: C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
+      REFS: /r:System.dll /r:System.Core.dll /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.Management.dll /r:System.Xml.dll
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build MineManager.exe
+        shell: cmd
+        run: |
+          if not exist dist mkdir dist
+          "%CSC%" /nologo /target:winexe /platform:anycpu /optimize+ /codepage:65001 /debug- /warnaserror- ^
+           /win32icon:"assets\app.ico" ^
+           /resource:"assets\logo64.png",MineManager.Resources.logo.png ^
+           /win32manifest:"src\app.manifest" ^
+           /out:"dist\MineManager.exe" %REFS% /recurse:"src\*.cs"
+
+      - name: Check translation keys
+        run: python tools/check_translations.py
+
+      - name: Recovery parser test
+        shell: cmd
+        run: |
+          if not exist build mkdir build
+          "%CSC%" /nologo /target:exe /platform:anycpu /codepage:65001 /debug- ^
+           /main:MineManager.RecoveryReportTest ^
+           /resource:"assets\logo64.png",MineManager.Resources.logo.png ^
+           /out:"build\RecoveryReportTest.exe" %REFS% /recurse:"src\*.cs" "tests\RecoveryReportTest.cs" || exit /b 1
+          build\RecoveryReportTest.exe
+
+      - name: UI smoke test
+        shell: pwsh
+        # Draws real windows on the hosted runner's desktop. A hang there should not block
+        # the other checks, so the step is time-boxed and reported but not gating yet.
+        continue-on-error: true
+        run: |
+          New-Item -ItemType Directory -Force build\shots | Out-Null
+          & $env:CSC /nologo /target:exe /platform:anycpu /codepage:65001 /debug- `
+            /main:MineManager.Smoke `
+            '/resource:assets\logo64.png,MineManager.Resources.logo.png' `
+            /out:build\Smoke.exe $env:REFS.Split(' ') '/recurse:src\*.cs' tests\Smoke.cs
+          if ($LASTEXITCODE -ne 0) { throw "Smoke test did not compile" }
+          $p = Start-Process -FilePath .\build\Smoke.exe -ArgumentList "`"$PWD\build\shots`"" `
+            -RedirectStandardOutput build\smoke-out.txt -RedirectStandardError build\smoke-err.txt `
+            -NoNewWindow -PassThru
+          $finished = $p.WaitForExit(6 * 60 * 1000)
+          if (-not $finished) { Stop-Process -Id $p.Id -Force }
+          Get-Content build\smoke-out.txt, build\smoke-err.txt -ErrorAction SilentlyContinue
+          $shots = Get-ChildItem build\shots -Filter *.png | Sort-Object LastWriteTime
+          "$($shots.Count) screenshots"
+          if (-not $finished) {
+            "Last screenshots before the hang:"
+            $shots | Select-Object -Last 3 | ForEach-Object { "  " + $_.Name }
+            throw "Smoke test did not finish within 6 minutes"
+          }
+          if ($p.ExitCode -ne 0) { throw "Smoke test exited with $($p.ExitCode)" }
+          if ((Get-Content build\smoke-out.txt -Raw) -match 'failed:') { throw "Smoke test reported a failed page or screenshot" }
+          if ($shots.Count -lt 180) { throw "Expected 180 screenshots, got $($shots.Count)" }
+
+      - name: Upload smoke screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-shots
+          path: build/shots/*.png
+          if-no-files-found: ignore
+          retention-days: 7
