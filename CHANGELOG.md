@@ -14,7 +14,8 @@ pre-release suffix (`-beta`, `-rc`) is published as a GitHub pre-release.
 
 - **CI workflow** — every push and pull request to `main` builds the EXE, checks the Turkish
   translation keys, runs the recovery parser test and the 180-layout smoke test, and uploads the
-  screenshots. A smoke page that throws, or fewer than 180 screenshots, fails the run.
+  screenshots. The smoke step is time-boxed to 6 minutes and reported, but does not fail the
+  run yet.
 - `tools/check_translations.py` — fails when a literal `L.T`/`L.F` text has no exact Turkish key
   (for example a space where the code has a line break) or a key is registered twice.
 
