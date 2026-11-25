@@ -6,6 +6,7 @@
 
 <p align="center">
   <a href="https://github.com/expires0n/minemanager/releases"><img src="https://img.shields.io/github/v/release/expires0n/minemanager?include_prereleases&label=release&style=flat-square" alt="Latest release"></a>
+  <a href="https://github.com/expires0n/minemanager/actions/workflows/ci.yml"><img src="https://github.com/expires0n/minemanager/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/expires0n/minemanager/actions/workflows/release.yml"><img src="https://github.com/expires0n/minemanager/actions/workflows/release.yml/badge.svg" alt="Release workflow"></a>
   <img src="https://img.shields.io/badge/status-public%20beta-orange?style=flat-square" alt="Public beta">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="MIT license"></a>
@@ -453,6 +454,9 @@ remote) is curated by hand because most WinUtil entries there are shell commands
   output encodings.
 - Language audit: **719** distinct English keys, **16** intentionally untranslated (format-only
   strings and technology names such as "Inno Setup", "NSIS" and "Windows Installer").
+- CI (`.github/workflows/ci.yml`) runs on every push and pull request to `main`: it builds the EXE,
+  runs `tools/check_translations.py` (every literal `L.T`/`L.F` text must have an exact Turkish
+  key), the recovery parser test and the smoke test, and keeps the screenshots as an artifact.
 - Tweak engine self-check: catalog counts (18/22/25/2), no null titles/scripts, no download tokens,
   real HKCU apply → detect → undo round trip, snapshot-over-default restore, rollback after a
   failing step, batch continues past a failure, cancel stops between items.
@@ -1014,6 +1018,9 @@ uzak erişim) elle hazırlanmıştır çünkü WinUtil'daki karşılıkları ver
   çıktı kodlamalarıyla denetler.
 - Çeviri denetimi: **719** farklı İngilizce anahtar, **16**'sı bilinçli olarak çevrilmedi (yalnızca
   biçim dizeleri ve Inno Setup, NSIS, Windows Installer gibi teknoloji adları).
+- CI (`.github/workflows/ci.yml`) `main`'e gelen her push ve pull request'te çalışır: EXE'yi derler,
+  `tools/check_translations.py` ile her `L.T`/`L.F` metninin birebir Türkçe anahtarı olduğunu denetler,
+  kurtarma ayrıştırıcı testini ve smoke testini çalıştırır, ekran görüntülerini artifact olarak saklar.
 - Ayar motoru öz denetimi: katalog sayıları (18/22/25/2), boş başlık/betik yok, indirme belirteci yok,
   gerçek HKCU uygula → algıla → geri al turu, varsayılan yerine anlık görüntüden geri yükleme,
   başarısız adımdan sonra geri alma, toplu işte hata sonrası devam, iptalde öğeler arasında durma.
